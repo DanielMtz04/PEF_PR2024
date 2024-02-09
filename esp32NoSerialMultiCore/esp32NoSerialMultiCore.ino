@@ -99,10 +99,10 @@ void set_pwm() {
   
   if (mov_flag==1 || adapt==0){
   myservo.write(slider_value);
-  delay(500);}
+  delay(10);}
   else {
     myservo.write(0);
-    delay(100);
+    delay(10);
   }
   }
 
@@ -166,6 +166,7 @@ const int analogPin = 36;
 const int ledPin = 2;      // Pin para el LED
 
 void setup() {
+  pinMode(ledPin,OUTPUT);
   pinMode(puertobattery,INPUT);
   adcAttachPin(puertobattery);
   EEPROM.begin(EEPROM_SIZE);
@@ -285,7 +286,7 @@ void loop() {
 // Lectura de la batería 
 
   float battery=analogRead(puertobattery); //lectura analógica del puerto 25 para guardarlo en una variable 
-  delay(50);
+  //delay(50);
   float batteryvolts=(battery/4095.0)*3.3;
   int lecture = ((batteryvolts-2.45)/(3.15-2.45)) *100;
   if (lecture < 0) {lecture = 0;} else if (lecture > 100) {lecture = 100;}
