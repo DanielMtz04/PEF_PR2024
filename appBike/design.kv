@@ -1,5 +1,28 @@
 #: import Factory kivy.factory.Factory
 
+<DisconnectPopup@Popup>:
+    title: "Desconectar"
+    size_hint: .5, .3
+    auto_dismiss: False
+
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "¿Estás seguro de que quieres desconectar?"
+        BoxLayout:
+            size_hint_y: None
+            height: '44dp'
+            Button:
+                text: "Cancelar"
+                on_release: app.cancel_disconnect(*args);
+                on_release: root.dismiss();
+
+            Button:
+                text: "Aceptar"
+                on_release: app.accept_disconnect(*args);
+                on_release: root.dismiss();
+             
+
 WindowManager:
     MainWindow:
     SecondaryWindow:
@@ -79,6 +102,7 @@ WindowManager:
     name: 'secondary_window'
 
     MDBottomNavigation:
+        id: nav
         #panel_color: "#eeeaea"
         selected_color_background: "orange"
         text_color_active: "lightgrey"
@@ -86,6 +110,7 @@ WindowManager:
             name: 'screen 1'
             text: 'features'
             icon: 'android'
+            on_tab_release: app.screen_counter(*args)
             MDFloatLayout:
                 size: root.width, root.height
                 orientation: 'vertical'
@@ -137,6 +162,7 @@ WindowManager:
             name: 'screen 2'
             text: 'settings'
             icon: 'git'
+            on_tab_release: app.screen_counter(*args)
             MDBoxLayout:
                 orientation: 'vertical'
                 size: root.width, root.height
@@ -219,3 +245,11 @@ WindowManager:
                         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                         on_release:
                             app.send_angle(*args)
+        MDBottomNavigationItem:
+            name: 'screen 3'
+            text: 'disconnect'
+            icon: 'logout'
+            on_tab_release: Factory.DisconnectPopup().open()
+                    
+
+

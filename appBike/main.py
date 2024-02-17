@@ -3,6 +3,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.utils import platform
+import os
+import sys
 import asyncio
 import json
 
@@ -14,12 +16,14 @@ from BLE import Connection, communication_manager
 from gpshelper import GpsHelper
 from AccHelper import AccHelper
 from GyroHelper import GyroHelper
+from kivy.factory import Factory
+
 
 # ADDRESS, UUID = "78:21:84:9D:37:10", "0000181a-0000-1000-8000-00805f9b34fb"
 ADDRESS, UUID = None, None
 GPS_ON = True
 DEBUG_GPS = False
-
+disconnect_flag = {'disconnect': False}
 
 class MainWindow(Screen): pass
 
@@ -34,6 +38,7 @@ class SpinnerDropdown(DropDown): pass
 
 
 class Main(MDApp):
+    
     dialog = None
     send_q = asyncio.Queue()
     speed_q = asyncio.Queue()
@@ -41,7 +46,67 @@ class Main(MDApp):
     battery_q = asyncio.Queue()
     angle_q = asyncio.Queue()
     acc_q = asyncio.Queue()
-    man_q = asyncio.Queue()
+    man_q = asyncio.Queue() 
+
+    
+    screen_flag=1
+    def screen_counter(self, touch: bool) -> None:
+        self.screen_flag+=1
+        print(self.screen_flag)
+    def cancel_disconnect(self, touch: bool) -> None:
+        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
+            print("Navegando a screen 2...")
+            #self.root.current = "secondary_window"
+            if(self.screen_flag%2!=0):
+                self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
+            elif(self.screen_flag%2==0):
+                self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 2')
+    def restart_app(self):
+        """Reinicia la aplicación completamente."""
+        python = sys.executable
+        os.execv(python, ['python'] + sys.argv)
+
+    def accept_disconnect(self, touch: bool) -> None:
+        
+        if touch:
+            self.root.current = 'main_window'
+            asyncio.create_task(self.cancel_tasks())
+            self.root.get_screen('main_window').ids.spinner.active = False
+            disconnect_flag['disconnect'] = True
+            # Restablecer el estado de la UI y variables a sus valores iniciales
+            self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
+            
+            self.reset_ui_and_variables()
+            
+            
+
+    def reset_ui_and_variables(self):
+        # Renames certain components from app that will be used in other functions
+        self.button = self.root.get_screen('main_window').ids.ble_button
+        self.circle_bar = self.root.get_screen('secondary_window').ids.circle_progress
+        self.speedmeter = self.root.get_screen('secondary_window').ids.speed
+        self.an_button = self.root.get_screen('secondary_window').ids.angle_button
+        self.manip_button = self.root.get_screen('secondary_window').ids.manip_button
+        self.speedmeter.font_size_min = self.speedmeter.font_size
+        self.sp_button = self.root.get_screen('secondary_window').ids.sp_button
+        self.read_slider_text = self.root.get_screen('secondary_window').ids.read_slider_text
+
+        self.circle_bar.text = f'0%'
+        self.read_slider_text.text = f'0 %'
+        self.manip_button.text = f'M: x'
+
+        self.per_button_pressed = True
+        self.km_button_pressed = False
+        self.angle_button_pressed = False
+
+        self.set_angle = 0
+        self.slider_label = 'slider'
+        self.slider_value = 0
+        self.slider_flag = False
+        self.test_counter = 0
+        self.root.get_screen('main_window').ids.device_dropdown.text = ''
+        self.root.get_screen('main_window').ids.device_dropdown.disabled = True
+
 
     def build(self):
         """setting design for application widget development specifications on design.kv"""
@@ -89,6 +154,8 @@ class Main(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
+        #self.root.current= 'secondary_window'
+
     def get_permissions(self):
         # Request permissions on Android
         if platform == 'android':
@@ -115,20 +182,34 @@ class Main(MDApp):
                 if DEBUG_GPS:
                     self.root.current = 'secondary_window'
                 else:
-                    asyncio.create_task(
-                        run_BLE(self, self.send_q, self.battery_q, self.drop_q, self.angle_q, self.man_q))
-                GpsHelper().run(self.speed_q)
-                asyncio.ensure_future(self.update_battery_value())
-                asyncio.ensure_future(self.update_speed_value())
-                asyncio.ensure_future(self.update_angle_value())
-                asyncio.ensure_future(self.update_manipulation_value())
+                    self.ble_task = asyncio.create_task(run_BLE(self, self.send_q, self.battery_q, self.drop_q, self.angle_q, self.man_q))
+                self.gps_task = GpsHelper().run(self.speed_q)
+                self.update_battery_task = asyncio.ensure_future(self.update_battery_value())
+                self.update_speed_task = asyncio.ensure_future(self.update_speed_value())
+                self.update_angle_task = asyncio.ensure_future(self.update_angle_value())
+                self.update_manipulation_task = asyncio.ensure_future(self.update_manipulation_value())
+                
+
+
 
             except Exception as e:
                 print(e)
 
+    async def cancel_tasks(self):
+        
+        tasks = [self.ble_task, self.gps_task, self.update_battery_task, self.update_speed_task, self.update_angle_task, self.update_manipulation_task, self.dropdown_clicked_task ]
+        for task in tasks:
+            if task is not None:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    print(f"{task.get_name()} was cancelled")
+
+
     def dropdown_clicked(self, _, value: str) -> None:
         """Handles events in main window dropdown"""
-        asyncio.ensure_future(self.dropdown_event_handler(value))
+        self.dropdown_clicked_task = asyncio.ensure_future(self.dropdown_event_handler(value))
 
     async def dropdown_event_handler(self, value: str) -> None:
         await self.drop_q.put(value)
@@ -284,7 +365,6 @@ class Main(MDApp):
                 print(f'Exception in battery:: {e}')
                 await asyncio.sleep(2.0)
 
-
 async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, drop_q: asyncio.Queue,
                   angle_q: asyncio.Queue, man_q: asyncio.Queue) -> None:
     """Asyncronous connection protocol for BLE"""
@@ -300,6 +380,8 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
                             flag=flag,
                             app=app,
                             drop_q=drop_q)
+    disconnect_flag['disconnect'] = False
+    
     try:
         asyncio.ensure_future(connection.manager())
         asyncio.ensure_future(communication_manager(connection=connection,
@@ -307,7 +389,7 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
                                                     read_char=read_char,
                                                     send_q=send_q,
                                                     battery_q=battery_q, angle_q=angle_q,
-                                                    man_q=man_q))
+                                                    man_q=man_q,disconnect_flag=disconnect_flag))
         print(f"fetching connection")
         await connection.flag.wait()
     finally:
@@ -318,6 +400,22 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
         app.root.current = 'secondary_window'
     except Exception as e:
         print(f'EXCEPTION WHEN CHANGING WINDOW -> {e}')
+
+
+async def disconnect_BLE(app: MDApp) -> None:
+    """Asynchronous protocol for BLE disconnection."""
+    print('Attempting to disconnect from BLE...')
+    try:
+        # Suponiendo que tienes una instancia de Connection accesible desde aquí.
+        # Si tu conexión está guardada de otra manera, ajusta esto acorde a tu implementación.
+        if app.connection:
+            await app.connection.cleanup()  # Asume que cleanup() es una corutina.
+            print('Disconnected successfully.')
+        else:
+            print('No BLE connection to disconnect.')
+    except Exception as e:
+        print(f'Exception during BLE disconnection: {e}')
+
 
 
 if __name__ == '__main__':

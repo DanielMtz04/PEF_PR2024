@@ -39,16 +39,10 @@ class Connection:
         self.rx_timestamps = []
         self.rx_delays = []
 
-    def on_disconnect(self) -> None:
+    async def on_disconnect(self) -> None:
         """Protocol on disconnect of BLE"""
         self.connected = False
         print(f"Disconnected from {self.connected_device.name}!")
-
-    async def cleanup(self) -> None:
-        """Notification and client cleanup"""
-        if self.client:
-            await self.client.stop_notify(self.read_char)
-            await self.client.disconnect()
 
     async def manager(self) -> None:
         """Connection manager. Makes sure that client exists and establishes connection"""
@@ -81,7 +75,7 @@ class Connection:
                 print(f"connection status: {self.connected}")
                 if self.connected:
                     try:
-                        self.client.set_disconnected_callback(self.on_disconnect)
+                        #self.client.set_disconnected_callback(self.on_disconnect)
                         print(self.client.services.characteristics)
                         self.set_connect_flag()  # setting flag into asyncio notify
                         await self.client.start_notify(self.read_char, self.notification_handler)
@@ -147,7 +141,7 @@ class Connection:
             response = dropdown_dict[device]
             if devices[response]:
                 device_found = True 
-                self.app.root.get_screen('main_window').ids.device_dropdown.disabled = True
+                self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
 
         print(f"Connecting to {devices[response].name}")
         self.connected_device = devices[response]
@@ -177,15 +171,21 @@ class Connection:
         if len(self.rx_data) >= self.dump_size:
             # self.data_dump_handler(self.rx_data, self.rx_timestamps, self.rx_delays)
             self.clear_lists()
+    def restaurar(self):
+        self.app.root.get_screen('main_window').ids.spinner.active = False
 
 
 async def communication_manager(connection: Connection,
                                 write_char: str, read_char: str,
-                                send_q: asyncio.Queue, battery_q: asyncio.Queue, angle_q:asyncio.Queue, man_q: asyncio.Queue):
+                                send_q: asyncio.Queue, battery_q: asyncio.Queue, angle_q:asyncio.Queue, man_q: asyncio.Queue, disconnect_flag: dict):
     """In charge of sending and receiving information
         + IMPORTANT to pair write and read characteristics between App and ESP32"""
+    connection.restaurar()
     buffer = list()
     while True:
+        if disconnect_flag.get('disconnect', True):
+            await connection.client.disconnect()
+            return 
         if connection.client and connection.connected:
             try:
                     print(f'q_size -> {send_q.qsize()}')
