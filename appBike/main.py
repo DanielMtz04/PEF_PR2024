@@ -71,11 +71,9 @@ class Main(MDApp):
         if touch:
             self.root.current = 'main_window'
             asyncio.create_task(self.cancel_tasks())
-            self.root.get_screen('main_window').ids.spinner.active = False
             disconnect_flag['disconnect'] = True
             # Restablecer el estado de la UI y variables a sus valores iniciales
             self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
-            
             self.reset_ui_and_variables()
             
             
@@ -83,6 +81,8 @@ class Main(MDApp):
     def reset_ui_and_variables(self):
         # Renames certain components from app that will be used in other functions
         self.button = self.root.get_screen('main_window').ids.ble_button
+        self.root.get_screen('main_window').ids.device_dropdown.text = ''
+        self.root.get_screen('main_window').ids.device_dropdown.disabled = True
         self.circle_bar = self.root.get_screen('secondary_window').ids.circle_progress
         self.speedmeter = self.root.get_screen('secondary_window').ids.speed
         self.an_button = self.root.get_screen('secondary_window').ids.angle_button
@@ -104,8 +104,6 @@ class Main(MDApp):
         self.slider_value = 0
         self.slider_flag = False
         self.test_counter = 0
-        self.root.get_screen('main_window').ids.device_dropdown.text = ''
-        self.root.get_screen('main_window').ids.device_dropdown.disabled = True
 
 
     def build(self):
@@ -154,8 +152,6 @@ class Main(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
-        #self.root.current= 'secondary_window'
-
     def get_permissions(self):
         # Request permissions on Android
         if platform == 'android':
@@ -178,6 +174,7 @@ class Main(MDApp):
     def connect_ble(self, touch: bool) -> None:
         """Function handling BLE connection between App and ESP32"""
         if touch:
+            self.root.get_screen('main_window').ids.spinner.active = False
             try:
                 if DEBUG_GPS:
                     self.root.current = 'secondary_window'
@@ -189,8 +186,6 @@ class Main(MDApp):
                 self.update_angle_task = asyncio.ensure_future(self.update_angle_value())
                 self.update_manipulation_task = asyncio.ensure_future(self.update_manipulation_value())
                 
-
-
 
             except Exception as e:
                 print(e)
@@ -213,7 +208,7 @@ class Main(MDApp):
 
     async def dropdown_event_handler(self, value: str) -> None:
         await self.drop_q.put(value)
-        self.root.get_screen('main_window').ids.spinner.active = True
+        #self.root.get_screen('main_window').ids.spinner.active = True
 
     def switch_state(self, _, value: bool) -> None:
         """Switch state for adaptive mode switch. When in adaptive mode, the slider is disabled"""
@@ -400,22 +395,6 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
         app.root.current = 'secondary_window'
     except Exception as e:
         print(f'EXCEPTION WHEN CHANGING WINDOW -> {e}')
-
-
-async def disconnect_BLE(app: MDApp) -> None:
-    """Asynchronous protocol for BLE disconnection."""
-    print('Attempting to disconnect from BLE...')
-    try:
-        # Suponiendo que tienes una instancia de Connection accesible desde aquí.
-        # Si tu conexión está guardada de otra manera, ajusta esto acorde a tu implementación.
-        if app.connection:
-            await app.connection.cleanup()  # Asume que cleanup() es una corutina.
-            print('Disconnected successfully.')
-        else:
-            print('No BLE connection to disconnect.')
-    except Exception as e:
-        print(f'Exception during BLE disconnection: {e}')
-
 
 
 if __name__ == '__main__':

@@ -99,6 +99,7 @@ class Connection:
                 break
 
 
+
     async def select_device(self, uuid: str = None, address: str = None) -> None:
         print(f"Bluetooh LE hardware warming up...{datetime.now()}")
         await asyncio.sleep(3.0)  # Wait for BLE to initialize.
@@ -121,6 +122,7 @@ class Connection:
             await self.discover_device()
 
     async def discover_device(self) -> None:
+        
         self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
         dropdown_devices = list()
         dropdown_dict = dict()
@@ -141,7 +143,9 @@ class Connection:
             response = dropdown_dict[device]
             if devices[response]:
                 device_found = True 
+                
                 self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
+
 
         print(f"Connecting to {devices[response].name}")
         self.connected_device = devices[response]
@@ -173,7 +177,8 @@ class Connection:
             self.clear_lists()
     def restaurar(self):
         self.app.root.get_screen('main_window').ids.spinner.active = False
-
+    
+        
 
 async def communication_manager(connection: Connection,
                                 write_char: str, read_char: str,
@@ -184,6 +189,7 @@ async def communication_manager(connection: Connection,
     buffer = list()
     while True:
         if disconnect_flag.get('disconnect', True):
+            connection.restaurar()
             await connection.client.disconnect()
             return 
         if connection.client and connection.connected:
