@@ -1,50 +1,5 @@
 #: import Factory kivy.factory.Factory
 
-<DisconnectPopup@Popup>:
-    title: "Desconectar"
-    size_hint: .5, .3
-    auto_dismiss: False
-
-    BoxLayout:
-        orientation: 'vertical'
-        Label:
-            text: "¿Estás seguro de que quieres desconectar?"
-        BoxLayout:
-            size_hint_y: None
-            height: '44dp'
-            Button:
-                text: "Cancelar"
-                on_release: app.cancel_disconnect(*args);
-                on_release: root.dismiss();
-
-            Button:
-                text: "Aceptar"
-                on_release: app.accept_disconnect(*args);
-                on_release: root.dismiss();
-             
-<ExitPopup@Popup>:
-    title: "Salir"
-    size_hint: .5, .3
-    auto_dismiss: False
-
-    BoxLayout:
-        orientation: 'vertical'
-        Label:
-            text: "¿Estás seguro de que deseas salir?"
-        BoxLayout:
-            size_hint_y: None
-            height: '44dp'
-            Button:
-                text: "Cancelar"
-                on_release: app.cancel_exit(*args);
-                on_release: root.dismiss();
-
-            Button:
-                text: "Aceptar"
-                on_release: app.accept_exit(*args);
-                on_release: root.dismiss();
-
-
 WindowManager:
     MainWindow:
     SecondaryWindow:
@@ -90,6 +45,7 @@ WindowManager:
     name: 'main_window'
     MDFloatLayout:
         size: root.width, root.height/2
+
         MDRectangleFlatButton:
             id: ble_button
             text: 'CONNECT BLUETOOTH'
@@ -98,8 +54,8 @@ WindowManager:
             pos_hint: {'center_x': 0.5,'center_y':0.8}
             on_release:
                 app.connect_ble(*args)
-	
-	MDFillRoundFlatIconButton:
+
+        MDFillRoundFlatIconButton:
             id: exit_button
             text: 'EXIT'
             font_size: 32
@@ -109,8 +65,8 @@ WindowManager:
             size: 250, 50
             pos_hint: {"center_x": 0.5, "y": 0.2}
             md_bg_color: 1, 0, 0, 1
-            on_release: Factory.ExitPopup().open()
-            
+            on_release: app.exit_dialog()
+
         Spinner:
             id: device_dropdown
             option_cls: "DropdownOptions"
@@ -283,7 +239,7 @@ WindowManager:
             name: 'screen 3'
             text: 'disconnect'
             icon: 'logout'
-            on_tab_release: Factory.DisconnectPopup().open()
-                    
+            on_tab_release: app.disconnect_dialog()
+
 
 
