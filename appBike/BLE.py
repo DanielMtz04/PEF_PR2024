@@ -9,10 +9,11 @@ import uuid as ui
 import json
 
 
+
 class Connection:
     #cambiar
     client: BleakClient = None
-
+    flag_search = False
     def __init__(self,
                  loop: asyncio.AbstractEventLoop,
                  app: MDApp,
@@ -58,9 +59,6 @@ class Connection:
                     print(e)
                 await asyncio.sleep(3.0)
 
-    def set_connect_flag(self):
-        self.flag.set()
-
     async def connect(self) -> None:
         """Connection mainframe between app and ESP32.
             + Contains select_device() and discover_device() as alternate protocol if desired object is not found"""
@@ -98,8 +96,6 @@ class Connection:
             finally:
                 break
 
-
-
     async def select_device(self, uuid: str = None, address: str = None) -> None:
         print(f"Bluetooh LE hardware warming up...{datetime.now()}")
         await asyncio.sleep(3.0)  # Wait for BLE to initialize.
@@ -119,20 +115,30 @@ class Connection:
                     print('device not found')
                     await asyncio.sleep(1.0)
         else:
+            self.flag_search= True
             await self.discover_device()
+
+    def set_connect_flag(self):
+        self.flag.set()                
 
     async def discover_device(self) -> None:
         
-        self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
         dropdown_devices = list()
         dropdown_dict = dict()
         device_found = False
         response = -1
         while not device_found:
+            
+           
+                
             devices = await asyncio.create_task(BleakScanner.discover())
             for i, device in enumerate(devices):
                 if device.name != None:
                     print(f"{i}: {device.name}, {device.address}")
+                    self.app.root.get_screen('main_window').ids.spinner.active = False
+                    self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
+                    self.app.root.get_screen('main_window').ids.device_dropdown.text = '...'
+                    self.app.root.get_screen('main_window').ids.device_dropdown.opacity = 1
                     dropdown_devices.append(str(device.name))
                     dropdown_dict.update({device.name: i})
             self.app.root.get_screen('main_window').ids.device_dropdown.pos_hint = {'center_x': 0.5, 'center_y': 0.7}
@@ -140,12 +146,13 @@ class Connection:
             self.app.root.get_screen('main_window').ids.device_dropdown.width = self.app.root.width-200
             self.app.root.get_screen('main_window').ids.device_dropdown.values = dropdown_devices
             device = await self.drop_q.get()
+            print("HOLAAAA")
+            print(device)
             response = dropdown_dict[device]
-            if devices[response]:
+            
+            if devices:
                 device_found = True 
-                
                 self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
-
 
         print(f"Connecting to {devices[response].name}")
         self.connected_device = devices[response]
@@ -177,6 +184,8 @@ class Connection:
             self.clear_lists()
     def restaurar(self):
         self.app.root.get_screen('main_window').ids.spinner.active = False
+
+        
     
         
 
@@ -185,7 +194,7 @@ async def communication_manager(connection: Connection,
                                 send_q: asyncio.Queue, battery_q: asyncio.Queue, angle_q:asyncio.Queue, man_q: asyncio.Queue, disconnect_flag: dict):
     """In charge of sending and receiving information
         + IMPORTANT to pair write and read characteristics between App and ESP32"""
-    connection.restaurar()
+    #connection.restaurar()
     buffer = list()
     while True:
         if disconnect_flag.get('disconnect', True):

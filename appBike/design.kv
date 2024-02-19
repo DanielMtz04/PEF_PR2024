@@ -1,4 +1,116 @@
 #: import Factory kivy.factory.Factory
+<DisconnectPopup@Popup>:
+    title: "Disconnect"
+    bold:True
+    separator_color: 0, 0, 0, 1
+    size_hint: .5, .3
+    auto_dismiss: False
+    title_color: 1, 1, 1, 1
+    background_color: 0,0,0,1 # Transparent background to avoid interference
+    separator_height: 2  # Ajusta según sea necesario
+
+    canvas.before:
+        Color:
+            rgba: 1, 0.537, 0, 1   # FF8A00 en RGBA
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [15]  #
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+
+        Label:
+            text: "¿Do you want to disconnect?"
+            bold:True
+            font_size: 30
+            color: 0.8, 0.8, 0.8, 1
+
+        BoxLayout:
+            size_hint_y: None
+            height: '44dp'
+            spacing: 10
+
+            Button:
+                text: "Cancel"
+                bold:True
+                on_release: app.cancel_disconnect(*args)
+                on_release: root.dismiss()
+                background_color: 0.3, 0.3, 0.3, 1
+                color: 1, 1, 1, 1
+                
+                on_press: self.background_color = [0, 0,0, 1]  # Cambia a un color más oscuro o claro cuando se presiona
+                on_release: self.background_color = [0.3, 0.3, 0.3, 1] 
+
+            Button:
+                text: "Accept"
+                bold:True
+                on_release: app.accept_disconnect(*args)
+                on_release: root.dismiss()
+                background_normal: ''
+                background_color: 1, 0.537, 0, 1
+                color: 1, 1, 1, 1
+                on_press: self.background_color = [0, 0, 0, 1]  # Cambia a un color más oscuro o claro cuando se presiona
+                on_release: self.background_color = [1, 0.537, 0, 1] 
+                
+                
+<ExitPopup@Popup>:
+    title: "Exit"
+    bold:True
+    separator_color: 0, 0, 0, 1
+    size_hint: .5, .3
+    auto_dismiss: False
+    title_color: 1, 1, 1, 1
+    background_color: 0,0,0,1 # Transparent background to avoid interference
+    separator_height: 2  # Ajusta según sea necesario
+
+    canvas.before:
+        Color:
+            rgba: 0.996, 0.239, 0.188, 1  # FF8A00 en RGBA
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [15]  #
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+
+        Label:
+            text: "¿Do you want to exit?"
+            bold:True
+            font_size: 30
+            color: 0.8, 0.8, 0.8, 1
+
+        BoxLayout:
+            size_hint_y: None
+            height: '44dp'
+            spacing: 10
+
+            Button:
+                text: "Cancel"
+                bold:True
+                on_release: app.cancel_exit(*args)
+                on_release: root.dismiss()
+                background_color: 0.3, 0.3, 0.3, 1
+                color: 1, 1, 1, 1
+                
+                on_press: self.background_color = [0, 0,0, 1]  # Cambia a un color más oscuro o claro cuando se presiona
+                on_release: self.background_color = [0.3, 0.3, 0.3, 1] 
+
+            Button:
+                text: "Accept"
+                bold:True
+                on_release: app.accept_exit(*args)
+                on_release: root.dismiss()
+                background_normal: ''
+                background_color: 0.996, 0.239, 0.188, 1
+                color: 1, 1, 1, 1
+                on_press: self.background_color = [0, 0, 0, 1]  # Cambia a un color más oscuro o claro cuando se presiona
+                on_release: self.background_color = [0.996, 0.239, 0.188, 1]         
 
 WindowManager:
     MainWindow:
@@ -45,16 +157,23 @@ WindowManager:
     name: 'main_window'
     MDFloatLayout:
         size: root.width, root.height/2
-
         MDRectangleFlatButton:
             id: ble_button
             text: 'CONNECT BLUETOOTH'
             font_size: 32
             bold: True
             pos_hint: {'center_x': 0.5,'center_y':0.8}
+            md_bg_color: 0, 0, 0, 1  # Color naranja definido
+            ripple_effect: False 
+            ripple_color: 1, 1, 1, 0  # Color de onda transparente
+            on_press: 
+                self.md_bg_color = [1, 0.537, 0, 1] 
+                self.text_color = [1, 1, 1, 1]
             on_release:
+                self.md_bg_color = [0, 0, 0, 1] 
+                self.text_color = [1, 0.537, 0, 1] 
                 app.connect_ble(*args)
-
+          
         MDFillRoundFlatIconButton:
             id: exit_button
             text: 'EXIT'
@@ -64,8 +183,8 @@ WindowManager:
             size_hint: None, None
             size: 250, 50
             pos_hint: {"center_x": 0.5, "y": 0.2}
-            md_bg_color: 1, 0, 0, 1
-            on_release: app.exit_dialog()
+            md_bg_color: 0.996, 0.239, 0.188, 1
+            on_release: Factory.ExitPopup().open()
 
         Spinner:
             id: device_dropdown
@@ -100,7 +219,7 @@ WindowManager:
             name: 'screen 1'
             text: 'features'
             icon: 'android'
-            on_tab_release: app.screen_flag_1(*args)
+            on_tab_release: app.screen_counter(*args)
             MDFloatLayout:
                 size: root.width, root.height
                 orientation: 'vertical'
@@ -239,7 +358,9 @@ WindowManager:
             name: 'screen 3'
             text: 'disconnect'
             icon: 'logout'
-            on_tab_release: app.disconnect_dialog()
+            on_tab_release: Factory.DisconnectPopup().open()
+                    
+
 
 
 
