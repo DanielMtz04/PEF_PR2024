@@ -42,7 +42,7 @@ int mov_flag = 0;
 int slider_value = 0;
 int slider_km_flag = 0;
 int j = 0; //variable para el envio de generador DC
-const int move_thresh = 1; //threshold para saber si la bicicleta está en movimiento
+const double move_thresh = 0.1; //threshold para saber si la bicicleta está en movimiento
 int pid_flag = 0;
 
 //A partir de aquí se definiran las variables del PID 
@@ -88,10 +88,13 @@ DynamicJsonDocument jsonreceived(256);
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
+      Serial.println("connect");
     };
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
+      myservo.write(0);
+      Serial.println("disconnect");
     }
 };
 
@@ -232,6 +235,7 @@ void setup() {
 }
 
 void loop() {
+  
   //PID DIGITAL
     if(velo_km >= 0 && slider_km_flag==1 && pid_flag == 1)
     {
@@ -360,9 +364,10 @@ void loop() {
 void TaskReadADC(void *pvParameters) {
   (void) pvParameters;
   while (1) {
-    int adcValue = analogRead(analogPin); // Leer valor analógico
-    Serial.print("adc value: ");
-    Serial.println(adcValue);
+    double adcValue = analogRead(analogPin); // Leer valor analógico
+    //Serial.print("adc value: ");
+    //Serial.println(adcValue);
+    adcValue = (adcValue*2.89)/4096;
     if (adcValue > move_thresh) {
      digitalWrite(ledPin, HIGH); // Encender el LED
      mov_flag = 1;
