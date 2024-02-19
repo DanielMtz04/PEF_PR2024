@@ -49,22 +49,30 @@ class Main(MDApp):
     man_q = asyncio.Queue() 
 
     
-    screen_flag=1
-    def screen_counter(self, touch: bool) -> None:
-        self.screen_flag+=1
+    screen_flag = True
+
+    def screen_flag_1(self, touch: bool) -> None:
+        self.screen_flag = True
         print(self.screen_flag)
+
+    def screen_flag_2(self, touch: bool) -> None:
+        self.screen_flag = False
+        print(self.screen_flag)
+
     def cancel_disconnect(self, touch: bool) -> None:
         if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
             print("Navegando a screen 2...")
-            #self.root.current = "secondary_window"
-            if(self.screen_flag%2!=0):
+            # self.root.current = "secondary_window"
+            if (self.screen_flag == True):
                 self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
-            elif(self.screen_flag%2==0):
+            elif (self.screen_flag == False):
                 self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 2')
+    '''            
     def restart_app(self):
         """Reinicia la aplicación completamente."""
         python = sys.executable
         os.execv(python, ['python'] + sys.argv)
+    '''
 
     def accept_disconnect(self, touch: bool) -> None:
         
@@ -104,8 +112,20 @@ class Main(MDApp):
         self.slider_value = 0
         self.slider_flag = False
         self.test_counter = 0
+	
+	
+    def cancel_exit(self, touch: bool) -> None:
+        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
+            print("Navegando a screen 1...")
+            # self.root.current = "secondary_window"
+            self.root.current = "main_window"
 
-
+    def accept_exit(self, touch: bool) -> None:
+        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
+            print("Cerrando app...")
+            self.stop()
+            
+            
     def build(self):
         """setting design for application widget development specifications on design.kv"""
         self.theme_cls.theme_style = 'Dark'
