@@ -117,16 +117,16 @@ WindowManager:
     SecondaryWindow:
 
 <DropdownOptions@SpinnerOption>:
-    font_size: 25
-    font_name: 'NotoSans-Medium.ttf'
+    font_size: 30
     bold: True
-    color: 1,0.54,0,1
+    color: 0.796, 0.718, 0.588, 1 
     background_color: 0,0,0,0
     background_normal: ''
 
 <SpinnerDropdown@Dropdown>:
     auto_width: True
     background_color: 0,0,0,0
+    color: 1,1,1,1
     max_height: 500
     effect_cls: 'ScrollEffect'
     scoll_type: ['bars', 'content']
@@ -155,35 +155,79 @@ WindowManager:
 
 <MainWindow>:
     name: 'main_window'
+    AnchorLayout:
+        anchor_x: 'center'
+        anchor_y: 'top'
+
+        BoxLayout:
+            orientation: 'horizontal'  # Coloca los widgets lado a lado
+            size_hint: None, None
+            height: '70dp'
+            width: self.parent.width
+
+            canvas.before:
+                Color:
+                    rgba: 0.859, 0.361, 0.004, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            
+            # Widget para el texto
+            Label:
+                text: 'eBIKE'
+                font_name: 'BalooBhaijaan2-Bold.ttf'
+                font_size: '30sp'
+                color: 1,1,1,1
+                size_hint: None, None
+                height: '70dp'
+                width: self.parent.width - dp(90)  # Ajusta el ancho para dejar espacio a la imagen
+                text_size: self.size  # Asegura que el texto se ajuste al tamaño del Label
+                halign: 'left'
+                valign: 'middle'
+                padding_x: dp(20)  # Margen izquierdo para el texto dentro del Label
+
+    # Texto "BLUETOOTH" debajo del rectángulo
+    Label:
+        text: 'Bluetooth Connection'
+        size_hint_y: None
+        height: self.texture_size[1]
+        font_size: '20sp'
+        pos_hint: {'center_x': 0.5,'center_y':0.8}
+        color: 1, 1, 1, 1  # Cambia el color según necesites
+
     MDFloatLayout:
         size: root.width, root.height/2
         MDRectangleFlatButton:
             id: ble_button
-            text: 'CONNECT BLUETOOTH'
+            text: 'SEARCH DEVICES'
+            font_name: 'BalooBhaijaan2-Bold.ttf'
             font_size: 32
             bold: True
-            pos_hint: {'center_x': 0.5,'center_y':0.8}
-            md_bg_color: 0, 0, 0, 1  # Color naranja definido
+            pos_hint: {'center_x': 0.5,'center_y':0.7}
+            md_bg_color: 0.796, 0.718, 0.588, 1  # Color naranja definido
+            text_color: 0, 0, 0, 1  # Correcto uso de dos puntos para asignación
             ripple_effect: False 
             ripple_color: 1, 1, 1, 0  # Color de onda transparente
             on_press: 
-                self.md_bg_color = [1, 0.537, 0, 1] 
-                self.text_color = [1, 1, 1, 1]
+                self.md_bg_color = [0.796, 0.718, 0.588, 1] 
+                self.text_color = [0, 0, 0, 1] 
             on_release:
-                self.md_bg_color = [0, 0, 0, 1] 
-                self.text_color = [1, 0.537, 0, 1] 
+                self.md_bg_color = [0.796, 0.718, 0.588, 1] 
+                self.text_color = [0, 0, 0, 1] 
                 app.connect_ble(*args)
           
         MDFillRoundFlatIconButton:
             id: exit_button
-            text: 'EXIT'
+            text: 'Exit'
+            font_name: 'BalooBhaijaan2-Bold.ttf'
             font_size: 32
             bold: True
             icon: "exit-to-app"
             size_hint: None, None
             size: 250, 50
-            pos_hint: {"center_x": 0.5, "y": 0.2}
-            md_bg_color: 0.996, 0.239, 0.188, 1
+            pos_hint: {"center_x": 0.5, "y": 0.1}
+            md_bg_color: 0.643, 0.255, 0.255, 1
             on_release: Factory.ExitPopup().open()
 
         Spinner:
@@ -192,11 +236,12 @@ WindowManager:
             dropdown_cls: "SpinnerDropdown"
             disabled: False
             text: '...'
-            pos_hint: {'center_x': 0, 'center_y': 0}
+            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
             size_hint: None, None
             size: 0,0
             on_text: app.dropdown_clicked(*args)
             text_color: 0,0,0,0
+            background_color: 0.6, 0.6, 0.561, 1
 
 
         MDSpinner:
@@ -205,6 +250,7 @@ WindowManager:
             size: dp(46), dp(46)
             pos_hint: {'center_x':0.5,'center_y':0.5}
             active: False
+            color: 0.859, 0.361, 0.004, 1 
 
 
 <SecondaryWindow>:

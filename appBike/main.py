@@ -4,7 +4,6 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.utils import platform
 import os
-import sys
 import asyncio
 import json
 
@@ -27,18 +26,14 @@ disconnect_flag = {'disconnect': False}
 
 class MainWindow(Screen): pass
 
-
 class SecondaryWindow(Screen): pass
-
 
 class WindowManager(ScreenManager): pass
 
-
 class SpinnerDropdown(DropDown): pass
 
-
 class Main(MDApp):
-    
+    screen_flag = True
     dialog = None
     send_q = asyncio.Queue()
     speed_q = asyncio.Queue()
@@ -48,82 +43,6 @@ class Main(MDApp):
     acc_q = asyncio.Queue()
     man_q = asyncio.Queue() 
 
-    
-    screen_flag = True
-
-    def screen_flag_1(self, touch: bool) -> None:
-        self.screen_flag = True
-        print(self.screen_flag)
-
-    def screen_flag_2(self, touch: bool) -> None:
-        self.screen_flag = False
-        print(self.screen_flag)
-    def cancel_disconnect(self, touch: bool) -> None:
-        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
-            print("Navegando a screen 2...")
-            # self.root.current = "secondary_window"
-            if (self.screen_flag == True):
-                self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
-            elif (self.screen_flag == False):
-                self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 2')
-
-    def restart_app(self):
-        """Reinicia la aplicación completamente."""
-        python = sys.executable
-        os.execv(python, ['python'] + sys.argv)
-
-    def accept_disconnect(self, touch: bool) -> None:
-        
-        if touch:
-            self.root.current = 'main_window'
-            self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
-            self.reset_ui_and_variables()
-            asyncio.create_task(self.cancel_tasks())
-            disconnect_flag['disconnect'] = True
-            # Restablecer el estado de la UI y variables a sus valores iniciales
-           
-            
-            
-
-    def reset_ui_and_variables(self):
-        # Renames certain components from app that will be used in other functions
-        self.button = self.root.get_screen('main_window').ids.ble_button
-        self.root.get_screen('main_window').ids.device_dropdown.text = ''
-        self.root.get_screen('main_window').ids.device_dropdown.disabled = True
-        self.root.get_screen('main_window').ids.device_dropdown.size = (0, 0)
-        self.root.get_screen('main_window').ids.device_dropdown.opacity = 0
-        self.circle_bar = self.root.get_screen('secondary_window').ids.circle_progress
-        self.speedmeter = self.root.get_screen('secondary_window').ids.speed
-        self.an_button = self.root.get_screen('secondary_window').ids.angle_button
-        self.manip_button = self.root.get_screen('secondary_window').ids.manip_button
-        self.speedmeter.font_size_min = self.speedmeter.font_size
-        self.sp_button = self.root.get_screen('secondary_window').ids.sp_button
-        self.read_slider_text = self.root.get_screen('secondary_window').ids.read_slider_text
-
-        self.circle_bar.text = f'0%'
-        self.read_slider_text.text = f'0 %'
-        self.manip_button.text = f'M: x'
-
-        self.per_button_pressed = True
-        self.km_button_pressed = False
-        self.angle_button_pressed = False
-
-        self.set_angle = 0
-        self.slider_label = 'slider'
-        self.slider_value = 0
-        self.slider_flag = False
-        self.test_counter = 0
-
-    def cancel_exit(self, touch: bool) -> None:
-        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
-            print("Navegando a screen 1...")
-            # self.root.current = "secondary_window"
-            self.root.current = "main_window"
-    
-    def accept_exit(self, touch: bool) -> None:
-        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
-            print("Cerrando app...")
-            self.stop()
             
     def build(self):
         """setting design for application widget development specifications on design.kv"""
@@ -149,6 +68,10 @@ class Main(MDApp):
 
         # Renames certain components from app that will be used in other functions
         self.button = self.root.get_screen('main_window').ids.ble_button
+        self.root.get_screen('main_window').ids.device_dropdown.text = ''
+        self.root.get_screen('main_window').ids.device_dropdown.size = (0, 0)
+        self.root.get_screen('main_window').ids.device_dropdown.opacity = 0
+
         self.circle_bar = self.root.get_screen('secondary_window').ids.circle_progress
         self.speedmeter = self.root.get_screen('secondary_window').ids.speed
         self.an_button = self.root.get_screen('secondary_window').ids.angle_button
@@ -156,7 +79,7 @@ class Main(MDApp):
         self.speedmeter.font_size_min = self.speedmeter.font_size
         self.sp_button = self.root.get_screen('secondary_window').ids.sp_button
         self.read_slider_text = self.root.get_screen('secondary_window').ids.read_slider_text
-        self.root.get_screen('main_window').ids.device_dropdown.text = ''
+        
         self.circle_bar.text = f'0%'
         self.read_slider_text.text = f'0 %'
         self.manip_button.text = f'M: x'
@@ -170,7 +93,7 @@ class Main(MDApp):
         self.slider_value = 0
         self.slider_flag = False
         self.test_counter = 0
-        #self.root.current = 'secondary_window'
+       
 
     def get_permissions(self):
         # Request permissions on Android
@@ -205,22 +128,9 @@ class Main(MDApp):
                 self.update_speed_task = asyncio.ensure_future(self.update_speed_value())
                 self.update_angle_task = asyncio.ensure_future(self.update_angle_value())
                 self.update_manipulation_task = asyncio.ensure_future(self.update_manipulation_value())
-                
 
             except Exception as e:
                 print(e)
-
-    async def cancel_tasks(self):
-        
-        tasks = [self.ble_task, self.gps_task, self.update_battery_task, self.update_speed_task, self.update_angle_task, self.update_manipulation_task, self.dropdown_clicked_task ]
-        for task in tasks:
-            if task is not None:
-                task.cancel()
-                try:
-                    await task
-                except asyncio.CancelledError:
-                    print(f"{task.get_name()} was cancelled")
-
 
     def dropdown_clicked(self, _, value: str) -> None:
         """Handles events in main window dropdown"""
@@ -228,9 +138,6 @@ class Main(MDApp):
             self.dropdown_clicked_task = asyncio.ensure_future(self.dropdown_event_handler(value))
 
     async def dropdown_event_handler(self, value: str) -> None:
-        print("EEEEEEEE")
-        print(value)
-        
         await self.drop_q.put(value)
         self.root.get_screen('main_window').ids.spinner.active = True
 
@@ -239,17 +146,14 @@ class Main(MDApp):
         if value:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.send_q.put_nowait(json.dumps({'adapt': 1}))
-            self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen(
-                'secondary_window').ids.adapt_slider.min
+            self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min
         else:
-            # self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.send_q.put_nowait(json.dumps({'adapt': 0}))
 
     def slider_on_value(self, _, value: int) -> None:
         """Sends percentage of assistance wanted to ESP32
         In automatic mode: Use BATTERY and ACCELEROMETER values to determine percentage of use"""
-        # print(value)
         label = 'slider'
         if self.per_button_pressed:
             self.read_slider_text.text = f'{value} %'
@@ -384,6 +288,72 @@ class Main(MDApp):
                 print(f'Exception in battery:: {e}')
                 await asyncio.sleep(2.0)
 
+    #Popup Disconnect
+    def screen_flag_1(self, touch: bool) -> None:
+        self.screen_flag = True
+        print(self.screen_flag)
+
+    def screen_flag_2(self, touch: bool) -> None:
+        self.screen_flag = False
+        print(self.screen_flag)
+
+    def cancel_disconnect(self, touch: bool) -> None:
+        if touch:  
+            if (self.screen_flag == True):
+                self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
+            elif (self.screen_flag == False):
+                self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 2')
+
+    def accept_disconnect(self, touch: bool) -> None:
+        if touch:
+            self.root.current = 'main_window'
+            self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
+            self.reset_ui_and_variables()
+            disconnect_flag['disconnect'] = True
+           
+            
+           
+    def reset_ui_and_variables(self):
+        self.button = self.root.get_screen('main_window').ids.ble_button
+        self.root.get_screen('main_window').ids.device_dropdown.text = ''
+        self.root.get_screen('main_window').ids.device_dropdown.disabled = True
+        self.root.get_screen('main_window').ids.device_dropdown.size = (0, 0)
+        self.root.get_screen('main_window').ids.device_dropdown.opacity = 0
+        
+        self.circle_bar = self.root.get_screen('secondary_window').ids.circle_progress
+        self.speedmeter = self.root.get_screen('secondary_window').ids.speed
+        self.an_button = self.root.get_screen('secondary_window').ids.angle_button
+        self.manip_button = self.root.get_screen('secondary_window').ids.manip_button
+        self.speedmeter.font_size_min = self.speedmeter.font_size
+        self.sp_button = self.root.get_screen('secondary_window').ids.sp_button
+        self.read_slider_text = self.root.get_screen('secondary_window').ids.read_slider_text
+
+        self.circle_bar.text = f'0%'
+        self.read_slider_text.text = f'0 %'
+        self.manip_button.text = f'M: x'
+
+        self.per_button_pressed = True
+        self.km_button_pressed = False
+        self.angle_button_pressed = False
+
+        self.set_angle = 0
+        self.slider_label = 'slider'
+        self.slider_value = 0
+        self.slider_flag = False
+        self.test_counter = 0
+
+    #Popup Exit 
+    def cancel_exit(self, touch: bool) -> None:
+        if touch:  # Asegúrate de que este método solo se ejecute en respuesta a un evento de toque
+            print("Move to screen 1...")
+            self.root.current = "main_window"
+    
+    def accept_exit(self, touch: bool) -> None:
+        if touch:  
+            print("Exit app...")
+            self.stop()
+            os._exit(0)
+    
 async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, drop_q: asyncio.Queue,
                   angle_q: asyncio.Queue, man_q: asyncio.Queue) -> None:
     """Asyncronous connection protocol for BLE"""

@@ -141,7 +141,7 @@ class Connection:
                     self.app.root.get_screen('main_window').ids.device_dropdown.opacity = 1
                     dropdown_devices.append(str(device.name))
                     dropdown_dict.update({device.name: i})
-            self.app.root.get_screen('main_window').ids.device_dropdown.pos_hint = {'center_x': 0.5, 'center_y': 0.7}
+            self.app.root.get_screen('main_window').ids.device_dropdown.pos_hint = {'center_x': 0.5, 'center_y': 0.6}
             self.app.root.get_screen('main_window').ids.device_dropdown.size = (50, 100)
             self.app.root.get_screen('main_window').ids.device_dropdown.width = self.app.root.width-200
             self.app.root.get_screen('main_window').ids.device_dropdown.values = dropdown_devices
