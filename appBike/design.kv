@@ -198,12 +198,11 @@ WindowManager:
 
     MDFloatLayout:
         size: root.width, root.height/2
-        MDRectangleFlatButton:
+        MDFillRoundFlatButton:
             id: ble_button
-            text: 'SEARCH DEVICES'
-            font_name: 'BalooBhaijaan2-Bold.ttf'
-            font_size: 32
-            bold: True
+            text: 'Search Devices'
+            font_size: '15sp'
+            font_name: 'Roboto-Bold.ttf'
             pos_hint: {'center_x': 0.5,'center_y':0.7}
             md_bg_color: 0.796, 0.718, 0.588, 1  # Color naranja definido
             text_color: 0, 0, 0, 1  # Correcto uso de dos puntos para asignación
@@ -219,15 +218,16 @@ WindowManager:
           
         MDFillRoundFlatIconButton:
             id: exit_button
-            text: 'Exit'
+            text: ' Exit'
             font_name: 'BalooBhaijaan2-Bold.ttf'
             font_size: 32
             bold: True
-            icon: "exit-to-app"
+            icon: "salida.png"
             size_hint: None, None
-            size: 250, 50
+            size: 250, 60
             pos_hint: {"center_x": 0.5, "y": 0.1}
             md_bg_color: 0.643, 0.255, 0.255, 1
+            text_color: 1,1,1,1
             on_release: Factory.ExitPopup().open()
 
         Spinner:
@@ -265,7 +265,7 @@ WindowManager:
             name: 'screen 1'
             text: 'features'
             icon: 'android'
-            on_tab_release: app.screen_counter(*args)
+            on_tab_release: app.screen_flag_1(*args)
             MDFloatLayout:
                 size: root.width, root.height
                 orientation: 'vertical'
@@ -406,7 +406,6 @@ WindowManager:
             icon: 'logout'
             on_tab_release: Factory.DisconnectPopup().open()
                     
-
 
 
 
