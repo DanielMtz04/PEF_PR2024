@@ -47,7 +47,7 @@ class Main(MDApp):
     def build(self):
         """setting design for application widget development specifications on design.kv"""
         self.theme_cls.theme_style = 'Dark'
-        self.theme_cls.primary_palette = 'Orange'
+        self.theme_cls.primary_palette = 'Gray'
         # GPS setup and start
         if GPS_ON:
             self.get_permissions()
@@ -82,7 +82,7 @@ class Main(MDApp):
         
         self.circle_bar.text = f'0%'
         self.read_slider_text.text = f'0 %'
-        self.manip_button.text = f'M: x'
+        self.manip_button.text = f'M: 0'
 
         self.per_button_pressed = True
         self.km_button_pressed = False
@@ -93,6 +93,8 @@ class Main(MDApp):
         self.slider_value = 0
         self.slider_flag = False
         self.test_counter = 0
+
+        #self.root.current = 'secondary_window'
        
 
     def get_permissions(self):
@@ -177,7 +179,7 @@ class Main(MDApp):
             self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
             self.slider_flag = True
         else:
-            self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "orange"
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "white"
             self.slider_flag = False
 
     def slider_touch_up(self, *args) -> None:
@@ -194,9 +196,9 @@ class Main(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.value = 0
             self.root.get_screen('secondary_window').ids.adapt_slider.max = 40
             self.root.get_screen('secondary_window').ids.adapt_slider.step = 1
-            self.root.get_screen('secondary_window').ids.adapt_slider.color = "blue"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "blue"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "blue"
+            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#A7D0D2"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#A7D0D2"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#A7D0D2"
 
     def slider_unit_per(self, touch: bool) -> None:
         if touch:
@@ -206,9 +208,9 @@ class Main(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.value = 0
             self.root.get_screen('secondary_window').ids.adapt_slider.max = 100
             self.root.get_screen('secondary_window').ids.adapt_slider.step = 5
-            self.root.get_screen('secondary_window').ids.adapt_slider.color = "orange"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "orange"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "orange"
+            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#99998F"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#99998F"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#99998F"
 
     def send_angle(self, touch: bool) -> None:
         print('in_touch_angle')
@@ -310,9 +312,7 @@ class Main(MDApp):
             self.root.get_screen('secondary_window').ids.nav.switch_tab('screen 1')
             self.reset_ui_and_variables()
             disconnect_flag['disconnect'] = True
-           
-            
-           
+                
     def reset_ui_and_variables(self):
         self.button = self.root.get_screen('main_window').ids.ble_button
         self.root.get_screen('main_window').ids.device_dropdown.text = ''
@@ -341,6 +341,12 @@ class Main(MDApp):
         self.slider_value = 0
         self.slider_flag = False
         self.test_counter = 0
+
+        self.sp_button.text = f'SP: 0'
+        self.read_slider_text.text = f'0 km/h'
+        self.root.get_screen('main_window').ids.spinner.active = False
+        self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min
+        self.root.get_screen('secondary_window').ids.adapt_switch.active = False
 
     #Popup Exit 
     def cancel_exit(self, touch: bool) -> None:
