@@ -94,9 +94,6 @@ class Main(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
-        #self.root.current = 'secondary_window'
-       
-
     def get_permissions(self):
         # Request permissions on Android
         if platform == 'android':
