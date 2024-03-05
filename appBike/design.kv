@@ -247,7 +247,7 @@ WindowManager:
             active: False
         
         # "Button Exit"
-        MDFillRoundFlatIconButton:
+        MDFillRoundFlatButton:
             id: exit_button
             text: '      Exit      '
             font_size: 32
@@ -301,7 +301,7 @@ WindowManager:
         id: nav
         panel_color: "#244B5E"
         selected_color_background: "#17303D"
-        text_color_active: "#FFFFFF"
+        text_color_active: "#A7D0D2"
         
         # Window 1
         MDBottomNavigationItem:
@@ -409,7 +409,7 @@ WindowManager:
                 MDRectangleFlatButton:
                     id: sp_button
                     text: 'SP: 0'
-                    pos_hint: {'center_x': 0.45, 'center_y': 0.5}
+                    pos_hint: {'center_x': 0.3, 'center_y': 0.5}
                     markup: True
                     md_bg_color: (36/255, 75/255, 94/255, 1)
                     text_color: 1,1,1,1
@@ -420,7 +420,7 @@ WindowManager:
                 MDRectangleFlatButton:
                     id: manip_button
                     text: 'M: 0'
-                    pos_hint: {'center_x': 0.55, 'center_y': 0.5}
+                    pos_hint: {'center_x': 0.7, 'center_y': 0.5}
                     markup: True
                     md_bg_color: (36/255, 75/255, 94/255, 1)
                     text_color: 1,1,1,1
@@ -431,7 +431,7 @@ WindowManager:
         MDBottomNavigationItem:
             name: 'screen 2'
             text: 'Settings'
-            icon: 'ajuste.png'
+            icon: 'configuraciones.png'
             on_tab_release: app.screen_flag_2(*args)
 
             # Se define el siguiente contenedor para posicionar widgets sin restricciones fijas
@@ -488,7 +488,7 @@ WindowManager:
                         font_size: 38
                         bold: True
                         font_name: 'Roboto-Bold.ttf'
-                        pos_hint: {'center_x': 0.4, 'center_y': 0.5}
+                        pos_hint: {'center_x': 0.3, 'center_y': 0.5}
                         markup: True
                         md_bg_color: (153/255, 153/255, 143/255, 1) 
                         text_color: (18/255, 18/255, 18/255, 1)
@@ -501,7 +501,7 @@ WindowManager:
                         font_size: 38
                         bold: True
                         font_name: 'Roboto-Bold.ttf'
-                        pos_hint: {'center_x': 0.6, 'center_y': 0.5}
+                        pos_hint: {'center_x': 0.7, 'center_y': 0.5}
                         markup: True
                         md_bg_color: (167/255, 208/255, 210/255, 1)
                         text_color: (18/255, 18/255, 18/255, 1)
@@ -568,7 +568,7 @@ WindowManager:
         MDBottomNavigationItem:
             name: 'screen 3'
             text: 'Disconnect'
-            icon: 'enchufe.png'
+            icon: 'desenchufado.png'
             on_tab_release: Factory.DisconnectPopup().open()
                     
 
