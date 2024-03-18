@@ -454,8 +454,8 @@ WindowManager:
                         line_color: (0.208, 0.208, 0.192, 1)
                         
                         MDLabel:
-                            text: 'Motion Detect'
-                            font_size: 38
+                            text: '     Motion Detect'
+                            font_size: '25sp'
                             halign: 'center'
                             pos_hint: {'center_y' : 0.5}
 
@@ -471,7 +471,7 @@ WindowManager:
 
                 # Label Mode
                 Label:
-                    text: 'Mode'
+                    text: 'Select Mode'
                     font_size: '20sp'
                     size_hint_y: None
                     height: self.texture_size[1]
@@ -542,28 +542,28 @@ WindowManager:
 
                 MDFloatLayout:
 
-                    #MDFillRoundFlatButton:
-                        #md_bg_color: (36/255, 75/255, 94/255, 1)
+                    MDFillRoundFlatButton:
+                        md_bg_color: (36/255, 75/255, 94/255, 1)
                       
-                        #text_color: (1, 1, 1, 1)
-                        #id: angle_button
-                        #text: 'Angle : 0°'
-                        #pos_hint: {'center_x': 0.5, 'center_y': 0.4}
-                        #on_release:
-                            #app.send_angle(*args)
-
-                    # Se define un indicador del Set Point deseado
-                    MDRectangleFlatButton:
+                        text_color: (1, 1, 1, 1)
+                        md_bg_color: (36/255, 75/255, 94/255, 1)
                         id: angle_button
                         text: 'Angle : 0°'
-                        font_size: 54
-                        text_color: 1,1,1,1
-                        bold: True
                         pos_hint: {'center_x': 0.5, 'center_y': 0.4}
-                        markup: True
-                        md_bg_color: (36/255, 75/255, 94/255, 1)
-                        on_release:
-                            app.send_angle(*args)
+                        
+
+                    # Se define un indicador del Set Point deseado
+                    #MDRectangleFlatButton:
+                        #id: angle_button
+                        #text: 'Angle : 0°'
+                        #font_size: 54
+                        #text_color: 1,1,1,1
+                        #bold: True
+                        #pos_hint: {'center_x': 0.5, 'center_y': 0.4}
+                        #markup: True
+                        #md_bg_color: (36/255, 75/255, 94/255, 1)
+                        #on_release:
+                            #app.send_angle(*args)
 
         MDBottomNavigationItem:
             name: 'screen 3'
