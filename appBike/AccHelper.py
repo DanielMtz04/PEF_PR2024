@@ -40,7 +40,7 @@ class AccHelper:
                 print(f'accelerometer_values: {val}')
                 try:
                     self.acc_q.put_nowait(json.dumps({'acc_y': self.y}))
-                    print("Anguloooooooo: ")
+                    print("Acceleration: ")
                     print(self.y)
                 except Exception as e:
                     print(f'EXCEPTION ACC :: {e}')
