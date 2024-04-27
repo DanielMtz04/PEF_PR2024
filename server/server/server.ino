@@ -1,235 +1,194 @@
+// Librerías
 #include <ESP32Servo.h>
-#include <analogWrite.h>
 #include <ESP32Tone.h>
 #include <ESP32PWM.h>
-#include <PIDController.h>
-
-#include <EEPROM.h>
-
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <ArduinoJson.h>
+#include <analogWrite.h>
 
-Servo myservo; 
-#define EEPROM_SIZE 512
-
-#define WINDOW_SIZE 5
-#define WINDOW_SIZE_DC 3
-
-PIDController pid;
-String velo="0";
-String slider_per="";
-String slider_km="";
-String angulo="";
-String vel="";
-float accel=0;
-int adapt=0;
-int eepromaddress=0;
-int velo_km=-1;
-int READINGS[WINDOW_SIZE];
-int READINGS_DC[WINDOW_SIZE_DC];
-int INDEX=0;
-int VALUE=0;
-int SUM=0;
-int AVERAGED=0;
-int INDEX_DC=0;
-int VALUE_DC=0;
-int SUM_DC=0;
-int AVERAGED_DC=0;
-int mov_flag = 0;
-int slider_value = 0;
-int slider_km_flag = 0;
-int j = 0; //variable para el envio de generador DC
-const int RPM_thresh = 200; //threshold para saber si la bicicleta está en movimiento
-int pid_flag = 0;
-
-//A partir de aquí se definiran las variables del PID 
-double slider_ref=0;
-float Kc=5; //---- Constante proporcional del PID
-float Taui=0.4; //----- Constante integral del PID
-float Taud=0.5; //----- Constante derivativa del PID
-float T=1;  //------ Periodo de muestreo de la variable de proceso
-float Mk=0; //----Manipulación del PID actual
-float Mk1=0; //----- Manipulación del PID del tiempo de muestreo anterior 
-float E=0; //----- Error actual
-float E1=0;  //----- Error anterior
-float E2=0; //------- Eerror 2 veces atrás del tiempo de muestreo actual
-float Ref_vel_km=5; //-------- Referencia de velocidad (km/hr)
-float Vel_km=0; //----- Variable de proceso (velocidad) 
-
-//---------------- Constantes del PID digital ---------------
-float BC1=0;
-float BC2=0;
-float BC3=0;
-//----------------
-//------------------------------------------------- IMPLEMENTACION SENSORES HALL -----------------------------------------
-#define CW            -1      // Assign a value to represent clock wise rotation
-#define CCW           1     // Assign a value to represent counter-clock wise rotation
-int flag_dir = 1;
-
-bool HSU_Val = digitalRead(25);   // Set the U sensor value as boolean and read initial state
-bool HSV_Val = digitalRead(26);   // Set the V sensor value as boolean and read initial state 
-bool HSW_Val = digitalRead(27);   // Set the W sensor value as boolean and read initial state 
-
-bool HSU_Val_old;
-bool HSV_Val_old;
-bool HSW_Val_old;
-
-int direct = 1;       // Integer variable to store BLDC rotation direction
-int pulseCount;       // Integer variable to store the pulse count
-
-float startTime;        // Float variable to store the start time of the current interrupt 
-float prevTime;         // Float variable to store the start time of the previous interrupt 
-float pulseTimeW;       // Float variable to store the elapsed time between interrupts for hall sensor W 
-float pulseTimeU;       // Float variable to store the elapsed time between interrupts for hall sensor U 
-float pulseTimeV;       // Float variable to store the elapsed time between interrupts for hall sensor V 
-float AvPulseTime;      // Float variable to store the average elapsed time between all interrupts 
-
-float PPM;        // Float variable to store calculated pulses per minute
-int RPM;        // Float variable to store calculated revolutions per minute
-//----------------------------------------------------------------------------------------------------------------------------------
-//Leemos el valor en nuestra EEPROM 
-  int angulooffset=EEPROM.read(eepromaddress);
-
-BLEServer* pServer = NULL;
-BLECharacteristic* pCharacteristic = NULL;
-bool deviceConnected = false;
-bool oldDeviceConnected = false;
-uint32_t value = 0;
-std::string receivedValue = ""; // Declarar receivedValue aquí
-bool dataSent = false; // Bandera para controlar si los datos se enviaron
-
-//Se crea la variable para generar el documento JSON, se realizara dinámico para que se vaya actualizando 
-DynamicJsonDocument jsonDoc(512);
-//Se crea la variable JSON para recibir el valor desde la app 
-DynamicJsonDocument jsonreceived(256);
+// Constantes y definiciones
+#define CW  -1       // Representa la rotación en sentido horario
+#define CCW  1       // Representa la rotación en sentido antihorario
 
 // UUIDs para el servicio y la característica BLE
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "00002A3D-0000-1000-8000-00805f9b34fb"
 
+#define PWM_PIN 16
+#define BATTERY_PIN 35
+#define HALL_SENSOR_U_PIN 25
+#define HALL_SENSOR_V_PIN 26
+#define HALL_SENSOR_W_PIN 27
+
+//---------------------- Variables para el envio y recepción de datos(ESP(Servidor)-APP(Cliente)) -----------------
+DynamicJsonDocument jsonDoc(512);
+DynamicJsonDocument jsonreceived(256);
+
+Servo myservo; 
+
+// variables para almacenar datos del documento json
+String velocity = "0";
+float acceleration = 0;
+
+//PWM
+int adaptationMode = 0;
+int movementFlag = 0;
+int sliderValue = 0;
+
+// variables para motion detect
+const int rpmThreshold = 200; 
+
+//variables modo automatico
+int pidFlag = 0;
+int automaticFlag = 0;
+int velocityPerKm = -1;
+
+//---------------------- Variables del PID -----------------
+double sliderReferenceKm = 0;
+float Kc = 5;                  //---- Constante proporcional del PID
+float Taui = 0.4;              //---- Constante integral del PID
+float Taud = 0.5;              //---- Constante derivativa del PID
+float T = 1;                   //---- Periodo de muestreo de la variable de proceso
+float Mk = 0;                  //---- Manipulación del PID actual
+float Mk1 = 0;                 //---- Manipulación del PID del tiempo de muestreo anterior 
+float E = 0;                   //---- Error actual
+float E1 = 0;                  //---- Error anterior
+float E2 = 0;                  //---- Error 2 veces atrás del tiempo de muestreo actual
+
+//---------------- Constantes del PID digital ---------------
+float BC1 = 0;
+float BC2 = 0;
+float BC3 = 0;
+
+//---------------------- Variables para el calculo de las revoluciones y uso de sensores HALL -----------------
+int directionFlagMotor = 1;
+int directionMotor = 1;         // Integer variable to store BLDC rotation direction
+int pulseCount;                 // Integer variable to store the pulse count
+int rpm;                        // Float variable to store calculated revolutions per minute
+float ppm;                      // Float variable to store calculated pulses per minute
+float startTime;                // Float variable to store the start time of the current interrupt 
+float prevTime;                 // Float variable to store the start time of the previous interrupt 
+float pulseTimeW;               // Float variable to store the elapsed time between interrupts for hall sensor W 
+float pulseTimeU;               // Float variable to store the elapsed time between interrupts for hall sensor U 
+float pulseTimeV;               // Float variable to store the elapsed time between interrupts for hall sensor V 
+float AvPulseTime;              // Float variable to store the average elapsed time between all interrupts 
+bool HSU_Val = digitalRead(HALL_SENSOR_U_PIN);   // Set the U sensor value as boolean and read initial state
+bool HSV_Val = digitalRead(HALL_SENSOR_V_PIN);   // Set the V sensor value as boolean and read initial state 
+bool HSW_Val = digitalRead(HALL_SENSOR_W_PIN);   // Set the W sensor value as boolean and read initial state 
+bool HSU_Val_old;
+bool HSV_Val_old;
+bool HSW_Val_old;
+
+//---------------------- Variables para la conexión Bluetooht-----------------
+BLEServer* pServer = NULL;
+BLECharacteristic* pCharacteristic = NULL;
+bool deviceConnected = false;
+bool oldDeviceConnected = false;
+std::string receivedValue = ""; 
+
+
+//----------------------Clase para el Control de eventos de conexión y desconexión BLE-----------------
 class MyServerCallbacks: public BLEServerCallbacks {
+  
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
-      //Serial.println("connect");
     };
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
       myservo.write(0);
-      Serial.print("Turning off...");
       ESP.restart();
-
-      //Serial.println("disconnect");
     }
+    
 };
 
+//----------------------Función para el envio de señal PWM-----------------
 void set_pwm() {
   
-  if (mov_flag==1 || adapt==0){
-  myservo.write(slider_value);
-  //delay(10);
+  if (movementFlag == 1 || adaptationMode == 0){
+   myservo.write(sliderValue);
   }
   else {
-    myservo.write(0);
-    //delay(10);
+   myservo.write(0);
   }
-  }
-
-void set_angle(int address, int angle) {
   
-  EEPROM.write(address,angle);
-  EEPROM.commit();
-  angulooffset = angle;
 }
 
-// Función para leer datos de la EEPROM
-byte readEEPROM(int address) {
-  return EEPROM.read(address);}
-  
+//----------------------Clase para el Control de recepción de datos----------------
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic* pCharacteristic) {
+      
       receivedValue = pCharacteristic->getValue();
-      
       deserializeJson(jsonreceived,receivedValue.c_str());
-      String angulo=jsonreceived["set_angle"];
-      String slider_per=jsonreceived["slider_per"];
-      String slider_km=jsonreceived["slider_km"];
-      String vel=jsonreceived["speed"];
-      String apt=jsonreceived["adapt"];
-      String acc=jsonreceived["acc_y"];
-      String pp=jsonreceived["pp"];
-      Serial.print("velo: ");
-      Serial.println(velo);
-      Serial.print("pp: ");
-      Serial.println(pp);
-      Serial.print("acc: ");
-      Serial.println(acc);
-
-      if (vel != "null") {velo = vel;}
-
       
-      accel=acc.toFloat();
-      if(apt != "null"){
-        adapt=apt.toInt();
+      String sliderPercentageString = jsonreceived["slider_per"]; 
+      String sliderKmString = jsonreceived["slider_km"]; 
+      String velocityValid = jsonreceived["speed"];//APPPPPP
+      String adaptationModeString = jsonreceived["adaptationMode"]; // APPPPP
+      String accelerationString = jsonreceived["acceleration_y"];//app
+ 
+      Serial.print("velocity: ");
+      Serial.println(velocityValid);
+  
+      Serial.print("acceleration: ");
+      Serial.println(accelerationString);
+
+      if (sliderPercentageString != "null") {
+        automaticFlag = 0;
+        sliderValue = sliderPercentageString.toInt();
+        set_pwm();
       }
-      if(angulo != "null"){
-        set_angle(eepromaddress, angulo.toInt());
-        }
-      if(slider_per != "null") {
-        
-        slider_km_flag = 0;
-        
-        slider_value = slider_per.toInt();
-        
-        set_pwm();
-        }
-       if(slider_km != "null") {
-        
-        slider_km_flag = 1;
-        slider_ref=slider_km.toDouble(); 
+
+      if (sliderKmString != "null") {
+        sliderReferenceKm = sliderKmString.toDouble();
+        automaticFlag = 1;
        }
-       Serial.println(vel);
-       if(velo != "null" && slider_km_flag == 1) {
-        
-        velo_km=velo.toInt();
-        set_pwm();
-        pid_flag = 1;
-       }
-       else if (velo == "null") {pid_flag = 0;}
+       
+
+      if (velocityValid != "null") {
+          velocity = velocityValid;
+        }
+
+      if (velocity != "null" && automaticFlag == 1) {
+        velocityPerKm = velocity.toInt();
+        pidFlag = 1;
+      } 
+
+      if (adaptationModeString != "null") {
+        adaptationMode=adaptationModeString.toInt();
+      }
+      
+      acceleration = accelerationString.toFloat();
+       
+       
     }
 };
 
 
 
-//Se crean las variables para identificar los puertos de entrada  
-const int puertobattery = 35;
-const int analogPin = 36;
-const int ledPin = 2;      // Pin para el LED
+
 
 void setup() {
-  //------------- IMPLEMENTACION SENSORES HALL --------------
-  pinMode(25, INPUT);     
-  pinMode(26, INPUT);     
-  pinMode(27, INPUT);
-  //---------------------------------------------------------
 
-  pinMode(ledPin,OUTPUT);
-  pinMode(puertobattery,INPUT);
-  adcAttachPin(puertobattery);
-  EEPROM.begin(EEPROM_SIZE);
-  myservo.attach(16);
+
+  //----------------------Configuración inicial-----------------
+  pinMode(BATTERY_PIN ,INPUT);
+  adcAttachPin(BATTERY_PIN );
+  myservo.attach(PWM_PIN);
   Serial.begin(115200);
+  
+  //----------------------Configuración de los Pines de los sensores Hall-----------------
+  pinMode(HALL_SENSOR_U_PIN, INPUT);
+  pinMode(HALL_SENSOR_V_PIN, INPUT);
+  pinMode(HALL_SENSOR_W_PIN, INPUT);
 
-  //Calculo de parametros PID
-  BC1=Kc*(1+(T/Taui)+(Taud/T));
-  BC2=Kc*(-1-(2*Taud/T));
-  BC3=Kc*Taud/T;
-
-  //Leemos el valor en nuestra EEPROM 
-  int angulooffset=EEPROM.read(eepromaddress);
+  //----------------------Calculo de parametros PID-----------------
+  BC1 = Kc*(1+(T/Taui)+(Taud/T));
+  BC2 = Kc*(-1-(2*Taud/T));
+  BC3 = Kc*Taud/T;
 
   // Se crea el dispositivo BLE
   BLEDevice::init("ESP32");
@@ -250,8 +209,6 @@ void setup() {
                       BLECharacteristic::PROPERTY_INDICATE
                     );
 
-  // https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml
-  
   // Creación de un Descriptor BLE
   pCharacteristic->addDescriptor(new BLE2902());
 
@@ -265,13 +222,13 @@ void setup() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(false);
-  pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
+  pAdvertising->setMinPreferred(0x0);  
   BLEDevice::startAdvertising();
 
-  // Crear la tarea para FreeRTOS
+  // Creación de la tarea para el modo Motion Detect
   xTaskCreatePinnedToCore(
-    TaskReadADC,   // Función de la tarea
-    "TaskReadADC", // Nombre de la tarea
+    TaskToMotionDetect,   // Función de la tarea
+    "TaskToMotionDetect", // Nombre de la tarea
     10000,          // Tamaño del stack de la tarea
     NULL,          // Parámetro de la tarea
     1,             // Prioridad de la tarea
@@ -281,189 +238,174 @@ void setup() {
   
 }
 
+
+//--------------------------------Inicio del main loop---------------------------
 void loop() {
   
-  //PID DIGITAL
-    if(velo_km >= 0 && slider_km_flag==1 && pid_flag == 1)
-    {
-      
-      //CHANGED LINES 234<>243
-      if (velo_km >= slider_ref){
-        Mk = 0;
-        E = 0;
-      }
-      else {
-        E = slider_ref-velo_km;
-        
-        Mk=Mk1+BC1*E+BC2*E1+BC3*E2;
-        }
-      
-      if(Mk>180){
-        Mk=180;
-        }
-      else if (Mk < 0){
-        Mk=0;
-      }
-      
-      slider_value = Mk;
-      set_pwm();
-      
-      Mk1=Mk;
-      E2=E1;
-      E1=E;
-      }
-     
-    // disconnecting
-    if (!deviceConnected && oldDeviceConnected) {
-        delay(500); // give the bluetooth stack the chance to get things ready
-        pServer->startAdvertising(); // restart advertising
-        
-        oldDeviceConnected = deviceConnected;
+  //----------------------PID Digital-----------------
+  if (velocityPerKm >= 0 && automaticFlag==1 && pidFlag == 1) {
+    
+    if (velocityPerKm >= sliderReferenceKm) {
+      Mk = 0;
+      E = 0;
     }
-
-    if (deviceConnected && !oldDeviceConnected) {
-        // do stuff here on connecting
-        oldDeviceConnected = deviceConnected;
+    else {
+      E = sliderReferenceKm-velocityPerKm;
+      Mk = Mk1 + BC1 * E + BC2 * E1 + BC3 * E2;
     }
+    
+    if (Mk > 180) {
+      Mk = 180;
+    }
+    else if (Mk < 0) {
+      Mk = 0;
+    }
+    
+    sliderValue = Mk;
+    set_pwm();
+    Mk1 = Mk;
+    E2 = E1;
+    E1 = E;
+  }
+  
+  //----------------------Proceso de desconexión-----------------
+  if (!deviceConnected && oldDeviceConnected) {
+      delay(500); 
+      pServer->startAdvertising(); // restart advertising
+      oldDeviceConnected = deviceConnected;
+  }
 
- 
+  if (deviceConnected && !oldDeviceConnected) {
+      // do stuff here on connecting
+      oldDeviceConnected = deviceConnected;
+  }
 
-  // Lectura de la batería 
-  float battery=analogRead(puertobattery); //lectura analógica del puerto 25 para guardarlo en una variable 
-  float batteryvolts=(battery/4095.0)*3.3;
-  int lecture = ((batteryvolts-2.45)/(3.15-2.45)) *100;
+  //----------------------Lectura de la bateria-----------------
+  float battery = analogRead(BATTERY_PIN ); 
+  float batteryvolts = (battery / 4095.0) * 3.3;
+  int lecture = ((batteryvolts - 2.45) / (3.15 - 2.45)) * 100;
   if (lecture < 0) {lecture = 0;} else if (lecture > 100) {lecture = 100;}
-
-  // Se convierten los valores de voltaje en ángulos (°) usando la función atan
-  int anguloy=asin(accel/9.81)* (180.0 / PI);
+  
+  //----------------------Calculo del Angulo-----------------
+  int anguloy = asin(acceleration / 9.81) * (180.0 / PI);
   if (anguloy == 2147483647){
     anguloy = 90;
   }
   else{
-    int anguloy=asin(accel/9.81)* (180.0 / PI);
+    int anguloy = asin(acceleration / 9.81) * (180.0 / PI);
   }
-  //Serial.println(anguloy);
-
-    // Enviar los valores por BLE
+  
+  //----------------------Envio de datos por BLE-----------------
   if (deviceConnected) {
-    // Convierte la batería a una cadena
-    String batteryStr=String(lecture);
+    
+    // Convierte el valor de la bateria  a un String
+    String batteryStr = String(lecture);
+    // Convierte el valor de la manipulación a entero
     int outputStr=int(Mk);
 
-    //Se crea el objeto en JSON para enviarlo 
+    //Se crea el documento JSON para enviar los datos
     jsonDoc["battery"]=batteryStr;
     jsonDoc["angle"]=anguloy;
     jsonDoc["manipulation"]=outputStr;
     
-
-    // Convertir el objeto JSON en una cadena
-     String jsonString;
-     serializeJson(jsonDoc, jsonString);
+    // Convertir el documento JSON en una cadena de caracteres
+    String jsonString;
+    serializeJson(jsonDoc, jsonString);
      
-    
-    // Enviar la cadena por BLE usando la característica
+    // Envio de la cadena por BLE usando la característica
     pCharacteristic->setValue(jsonString.c_str());
     delay(100);
   }
+  
 }
-//----------------------------- IMPLEMENTACION SENSORES HALL -----------------------------------
+//--------------------------------Fin del main loop--------------------------- 
+
+//----------------------------- Funciones para el calculo de rpm a partir de los sensores HALL -----------------------------------
 void HallSensorW()
 {
-  startTime = micros();           // Set startTime to current microcontroller elapsed time value
-  HSW_Val = digitalRead(27);          // Read the current W hall sensor value
+  startTime = micros();                                        // Set startTime to current microcontroller elapsed time value
+  HSW_Val = digitalRead(HALL_SENSOR_W_PIN);                                   // Read the current W hall sensor value
   HSW_Val = !HSW_Val; 
-  HSV_Val = digitalRead(26);            // Read the current V (or U) hall sensor value 
-  direct = (HSW_Val == HSV_Val) ? CW : CCW;     // Determine rotation direction (ternary if statement)
-  pulseCount = pulseCount + (1 * direct);       // Add 1 to the pulse count
-  pulseTimeW = startTime - prevTime;        // Calculate the current time between pulses
-  AvPulseTime = ((pulseTimeW + pulseTimeU + pulseTimeV)/3); // Calculate the average time time between pulses
-  PPM = (1000000 / AvPulseTime) * 60;         // Calculate the pulses per min (1000 micros in 1 second)
-  RPM = PPM / 90;           // Calculate revs per minute based on 90 pulses per rev
-  prevTime = startTime;           // Remember the start time for the next interrupt
-}
+  HSV_Val = digitalRead(HALL_SENSOR_V_PIN);                                   // Read the current V (or U) hall sensor value 
+  directionMotor = (HSW_Val == HSV_Val) ? CW : CCW;            // Determine rotation direction (ternary if statement)
+  pulseTimeW = startTime - prevTime;                           // Calculate the current time between pulses
+  AvPulseTime = ((pulseTimeW + pulseTimeU + pulseTimeV)/3);    // Calculate the average time time between pulses
+  ppm = (1000000 / AvPulseTime) * 60;                          // Calculate the pulses per min (1000 micros in 1 second)
+  rpm = ppm / 90;                                              // Calculate revs per minute based on 90 pulses per rev
+  prevTime = startTime;                                        // Remember the start time for the next interrupt
+} 
 
 void HallSensorV()
 {
   startTime = micros();
-  HSV_Val = digitalRead(26);
-  HSU_Val = digitalRead(25);          // Read the current U (or W) hall sensor value 
-  direct = (HSV_Val == HSU_Val) ? CW : CCW;
-  pulseCount = pulseCount + (1 * direct);
+  HSV_Val = digitalRead(HALL_SENSOR_V_PIN);
+  HSU_Val = digitalRead(HALL_SENSOR_U_PIN);          
+  directionMotor = (HSV_Val == HSU_Val) ? CW : CCW;
   pulseTimeV = startTime - prevTime;        
   AvPulseTime = ((pulseTimeW + pulseTimeU + pulseTimeV)/3);   
-  PPM = (1000000 / AvPulseTime) * 60;         
-  RPM = PPM / 90;
+  ppm = (1000000 / AvPulseTime) * 60;         
+  rpm = ppm / 90;
   prevTime = startTime;
 }
 
 void HallSensorU()
 {
   startTime = micros();
-  HSU_Val = digitalRead(25);
-  HSW_Val = digitalRead(27);          // Read the current W (or V) hall sensor value  
+  HSU_Val = digitalRead(HALL_SENSOR_U_PIN);
+  HSW_Val = digitalRead(HALL_SENSOR_W_PIN);          
   HSW_Val = !HSW_Val;   
-  direct = (HSU_Val == HSW_Val) ? CW : CCW;
-  pulseCount = pulseCount + (1 * direct);
+  directionMotor = (HSU_Val == HSW_Val) ? CW : CCW;
   pulseTimeU = startTime - prevTime;        
   AvPulseTime = ((pulseTimeW + pulseTimeU + pulseTimeV)/3);   
-  PPM = (1000000 / AvPulseTime) * 60;         
-  RPM = PPM / 90;
+  ppm = (1000000 / AvPulseTime) * 60;         
+  rpm = ppm / 90;
   prevTime = startTime;
 }
-// Función para la tarea de FreeRTOS
-void TaskReadADC(void *pvParameters) {
+
+
+//----------------------Tarea para la implementación del Motion Detect-----------------
+void TaskToMotionDetect(void *pvParameters) {
   (void) pvParameters;
+  
   while (1) {
-    if ((micros() - prevTime) > 100000) RPM = 0; 
+    if ((micros() - prevTime) > 100000) rpm = 0; 
 
-  HSU_Val_old = HSU_Val;
-  HSV_Val_old = HSV_Val;
-  HSW_Val_old = HSW_Val;
-
-  HSU_Val = digitalRead(25);  
-  HSV_Val = digitalRead(26);     
-  HSW_Val = digitalRead(27);  
-  HSW_Val = !HSW_Val; 
-
-  if (HSW_Val_old != HSW_Val){
-      HallSensorW();
-         
-      
-  }  
-  else if (HSV_Val_old != HSV_Val){
-      HallSensorV();
-      
-
-  }
-  else if (HSU_Val_old != HSU_Val){
-      HallSensorU();
-      
-  }
+    HSU_Val_old = HSU_Val;
+    HSV_Val_old = HSV_Val;
+    HSW_Val_old = HSW_Val;
+    HSU_Val = digitalRead(HALL_SENSOR_U_PIN);  
+    HSV_Val = digitalRead(HALL_SENSOR_V_PIN);     
+    HSW_Val = digitalRead(HALL_SENSOR_W_PIN);  
+    HSW_Val = !HSW_Val; 
   
-  if (RPM > RPM_thresh && direct == 1 && flag_dir==1) {
-     //digitalWrite(ledPin, HIGH); // Encender el LED
-     mov_flag = 1;
-     flag_dir = 0;
-     set_pwm();
-    } 
-    else if (RPM > RPM_thresh &&  flag_dir==0) {
-     //digitalWrite(ledPin, HIGH); // Encender el LED
-     mov_flag = 1;
-     set_pwm();
-    } 
-    else{
-      //digitalWrite(ledPin, LOW); // Encender el LED
-      mov_flag = 0;
-      flag_dir = 1;
-      set_pwm();
-      
+    if (HSW_Val_old != HSW_Val) {
+        HallSensorW();
+    }  
+    else if (HSV_Val_old != HSV_Val) {
+        HallSensorV();
+    }
+    else if (HSU_Val_old != HSU_Val) {
+        HallSensorU();
+    }
+    
+    if (rpm > rpmThreshold && directionMotor == 1 && directionFlagMotor==1) {
+       movementFlag = 1;
+       directionFlagMotor = 0;
+       set_pwm();
+      } 
+      else if (rpm > rpmThreshold &&  directionFlagMotor==0) {
+       movementFlag = 1;
+       set_pwm();
+      } 
+      else{
+        movementFlag = 0;
+        directionFlagMotor = 1;
+        set_pwm();
+    }
+    
+    //Serial.println(rpm); 
+    //Serial.println(directionMotor);
+    //Serial.print(HSU_Val); Serial.print(HSV_Val); Serial.println(HSW_Val);
+    //Serial.println(ppm);
   }
-  
-  //Serial.println(RPM); 
-  //Serial.println(direct);
-  //Serial.print(HSU_Val); Serial.print(HSV_Val); Serial.println(HSW_Val);
-  //Serial.println(PPM);
-
 }
-}
-//---------------------------------------------------------------------------------------------
