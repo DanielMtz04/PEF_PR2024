@@ -8,9 +8,9 @@ class GpsHelper:
     gps_min_distance: float = 3.0
     velocity: int = 0
    
-    def run(self, speed_q: asyncio.Queue) -> None:
+    def run(self, velocity_queue: asyncio.Queue) -> None:
         print('in_gps')
-        self.speed_q = speed_q
+        self.velocity_queue = velocity_queue
     
         # configure GPS
         if platform == 'android' or platform == 'ios':
@@ -22,7 +22,7 @@ class GpsHelper:
     def on_location(self, *args, **kwargs):
         """callback used to gather relevant information"""
         self.velocity = (kwargs['speed'] * 3.6)
-        self.speed_q.put_nowait(self.velocity)
+        self.velocity_queue.put_nowait(self.velocity)
         
     def on_auth_status(self, general_status: str, status_message: str) -> None:
         if general_status == 'provider-enabled':

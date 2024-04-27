@@ -31,16 +31,16 @@ class SpinnerDropdown(DropDown): pass
 
 
 class App(MDApp):
-    screen_flag = True
-    dialog = None
-    send_q = asyncio.Queue()
-    speed_q = asyncio.Queue()
-    drop_q = asyncio.Queue()
-    battery_q = asyncio.Queue()
-    angle_q = asyncio.Queue()
-    acc_q = asyncio.Queue()
-    man_q = asyncio.Queue()
 
+    screen_flag = True
+    deviceSelect_queue = asyncio.Queue()
+    dataTx_queue = asyncio.Queue()
+    velocity_queue = asyncio.Queue()
+    acceleration_queue = asyncio.Queue()
+    angle_queue = asyncio.Queue()
+    battery_queue = asyncio.Queue()
+    manipulation_queue = asyncio.Queue()
+    
     def build(self):
         """setting design for application widget development specifications on design.kv"""
         self.theme_cls.theme_style = 'Dark'
@@ -113,8 +113,8 @@ class App(MDApp):
         if touch:
             self.root.get_screen('main_window').ids.spinner.active = True
             try:
-                self.ble_task = asyncio.create_task(run_BLE(self, self.send_q, self.battery_q, self.drop_q, self.angle_q, self.man_q))
-                self.gps_task = GpsHelper().run(self.speed_q)
+                self.ble_task = asyncio.create_task(run_BLE(self, self.dataTx_queue, self.battery_queue, self.deviceSelect_queue, self.angle_queue, self.manipulation_queue))
+                self.gps_task = GpsHelper().run(self.velocity_queue)
                 self.update_battery_task = asyncio.ensure_future(self.update_battery_value())
                 self.update_speed_task = asyncio.ensure_future(self.update_speed_value())
                 self.update_manipulation_task = asyncio.ensure_future(self.update_manipulation_value())
@@ -128,18 +128,18 @@ class App(MDApp):
             self.device_clicked_task = asyncio.ensure_future(self.device_event_selected(value))
 
     async def device_event_selected(self, value: str) -> None:
-        await self.drop_q.put(value)
+        await self.deviceSelect_queue.put(value)
         self.root.get_screen('main_window').ids.spinner.active = True
 
     def switch_state_motion_detect(self, _, value: bool) -> None:
         """Switch state for adaptive mode switch. When in adaptive mode, the slider is disabled"""
         if value:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
-            self.send_q.put_nowait(json.dumps({'adaptationMode': 1}))
+            self.dataTx_queue.put_nowait(json.dumps({'adaptationMode': 1}))
             self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min
         else:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
-            self.send_q.put_nowait(json.dumps({'adaptationMode': 0}))
+            self.dataTx_queue.put_nowait(json.dumps({'adaptationMode': 0}))
 
 
     def slider_unit_km(self, touch: bool) -> None:
@@ -191,10 +191,10 @@ class App(MDApp):
         if value == self.root.get_screen('secondary_window').ids.adapt_slider.max:
             self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "red"
             if not self.slider_flag:
-                self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
+                self.dataTx_queue.put_nowait(json.dumps({self.slider_label: self.slider_value}))
                 self.slider_flag = True
         elif value == self.root.get_screen('secondary_window').ids.adapt_slider.min and not self.slider_flag:
-            self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
+            self.dataTx_queue.put_nowait(json.dumps({self.slider_label: self.slider_value}))
             self.slider_flag = True
         else:
             self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "white"
@@ -202,7 +202,7 @@ class App(MDApp):
 
     def slider_touch_up(self, *args) -> None:
         try:
-            self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
+            self.dataTx_queue.put_nowait(json.dumps({self.slider_label: self.slider_value}))
         except asyncio.QueueFull:
             pass
 
@@ -212,7 +212,7 @@ class App(MDApp):
         while True:
             print('in_manipulation')
             try:
-                manip = await self.man_q.get()
+                manip = await self.manipulation_queue.get()
                 manip = int(manip)
                 self.manip_button.text = f'M: {manip}'  
             except Exception as e:
@@ -225,10 +225,10 @@ class App(MDApp):
         while True:
             print("in_speed")
             try:
-                speed = await self.speed_q.get()
+                speed = await self.velocity_queue.get()
                 speed = float(speed)
                 print(f"speed-> {speed}")
-                await self.send_q.put(json.dumps({'speed': speed}))
+                await self.dataTx_queue.put(json.dumps({'speed': speed}))
             except Exception as e:
                 print(f'Exception in speed:: {e}')
                 await asyncio.sleep(1.0)
@@ -246,7 +246,7 @@ class App(MDApp):
         while True:
             print("in_battery")
             try:
-                current_battery_life = await self.battery_q.get()
+                current_battery_life = await self.battery_queue.get()
                 battery_life = float(current_battery_life)
                 battery_life = int(battery_life)
                 print(f"battery-> {battery_life}")
@@ -333,8 +333,8 @@ class App(MDApp):
             os._exit(0)
 
 
-async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, drop_q: asyncio.Queue,
-                  angle_q: asyncio.Queue, man_q: asyncio.Queue) -> None:
+async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asyncio.Queue, deviceSelect_queue: asyncio.Queue,
+                  angle_queue: asyncio.Queue, manipulation_queue: asyncio.Queue) -> None:
     """Asyncronous connection protocol for BLE"""
     print('in run_BLE')
     read_char = "00002A3D-0000-1000-8000-00805f9b34fb"
@@ -347,7 +347,7 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
                             write_char=read_char,
                             flag=flag,
                             app=app,
-                            drop_q=drop_q)
+                            deviceSelect_queue=deviceSelect_queue)
     disconnect_flag['disconnect'] = False
 
     try:
@@ -355,14 +355,14 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
         asyncio.ensure_future(communication_manager(connection=connection,
                                                     write_char=read_char,
                                                     read_char=read_char,
-                                                    send_q=send_q,
-                                                    battery_q=battery_q, angle_q=angle_q,
-                                                    man_q=man_q, disconnect_flag=disconnect_flag))
+                                                    dataTx_queue=dataTx_queue,
+                                                    battery_queue=battery_queue, angle_queue=angle_queue,
+                                                    manipulation_queue=manipulation_queue, disconnect_flag=disconnect_flag))
         print(f"fetching connection")
         await connection.flag.wait()
     finally:
         print(f"flag status confirmed!")
-        AccHelper().run(send_q)
+        AccHelper().run(dataTx_queue)
 
     try:
         app.root.current = 'secondary_window'

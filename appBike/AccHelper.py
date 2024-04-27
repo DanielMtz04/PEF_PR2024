@@ -8,9 +8,9 @@ class AccHelper:
     x = 0
     y = 0
     z = 0
-    def run(self, acc_q: asyncio.Queue) -> None:
+    def run(self, acceleration_queue: asyncio.Queue) -> None:
         print(f'in_accelerometer')
-        self.acc_q = acc_q
+        self.acceleration_queue = acceleration_queue
         if platform == 'android' or platform == 'ios':
             from plyer import accelerometer
             self.accelerometer = accelerometer
@@ -37,7 +37,7 @@ class AccHelper:
                self.z = value[2]
                print(f'accelerometer_values: {value}')
                try:
-                  self.acc_q.put_nowait(json.dumps({'acceleration_y': self.y}))
+                  self.acceleration_queue.put_nowait(json.dumps({'acceleration_y': self.y}))
                except Exception as e:
                   print(f'EXCEPTION ACCELEROMETER :: {e}')
             await asyncio.sleep(dt)

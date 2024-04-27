@@ -17,7 +17,7 @@ class Connection:
                  app: MDApp,
                  uuid: Union[str, None], address: Union[str, None],
                  read_char: str, write_char: str,
-                 drop_q: asyncio.Queue,
+                 deviceSelect_queue: asyncio.Queue,
                  dump_size: int = 256,
                  flag: asyncio.Event = False):
         self.loop = loop
@@ -29,7 +29,7 @@ class Connection:
         self.dump_size = dump_size
         self.flag = flag
         self.app = app
-        self.drop_q = drop_q
+        self.deviceSelect_queue = deviceSelect_queue
 
         self.connected = False
         self.connected_device = None
@@ -142,7 +142,7 @@ class Connection:
             self.app.root.get_screen('main_window').ids.device_dropdown.width = self.app.root.width - 200
             self.app.root.get_screen('main_window').ids.device_dropdown.values = dropdown_devices
 
-            device = await self.drop_q.get()
+            device = await self.deviceSelect_queue.get()
             print(f'Device select: {device}')
             response = dropdown_dict[device]
 
@@ -186,8 +186,8 @@ class Connection:
 
 async def communication_manager(connection: Connection,
                                 write_char: str, read_char: str,
-                                send_q: asyncio.Queue, battery_q: asyncio.Queue, angle_q: asyncio.Queue,
-                                man_q: asyncio.Queue, disconnect_flag: dict):
+                                dataTx_queue: asyncio.Queue, battery_queue: asyncio.Queue, angle_queue: asyncio.Queue,
+                                manipulation_queue: asyncio.Queue, disconnect_flag: dict):
     """In charge of sending and receiving information
         + IMPORTANT to pair write and read characteristics between App and ESP32"""
   
@@ -199,13 +199,13 @@ async def communication_manager(connection: Connection,
             return
         if connection.client and connection.connected:
             try:
-                print(f'q_size -> {send_q.qsize()}')
-                if send_q.qsize() > 1:
-                    for i in range(send_q.qsize()):
-                        input_str = await send_q.get()
+                print(f'q_size -> {dataTx_queue.qsize()}')
+                if dataTx_queue.qsize() > 1:
+                    for i in range(dataTx_queue.qsize()):
+                        input_str = await dataTx_queue.get()
                         buffer.append(str(input_str))
                 else:
-                    buffer.append(str(send_q.get_nowait()))
+                    buffer.append(str(dataTx_queue.get_nowait()))
                 if len(buffer) > 0:
                     input_str = f"{buffer[0]} \n"
                     for i in buffer:
@@ -230,7 +230,7 @@ async def communication_manager(connection: Connection,
                 print(f'EXCEPTION JSON BATTERY: {e}')
                 bat_str = None
             if bat_str is not None:
-                await battery_q.put(bat_str)
+                await battery_queue.put(bat_str)
             # Read angle    
             try:
                 angle_str = msg_json['angle']
@@ -246,7 +246,7 @@ async def communication_manager(connection: Connection,
                 print(f'EXCEPTION JSON MAN: {e}')
                 man_str = None
             if man_str is not None:
-                await man_q.put(man_str)
+                await manipulation_queue.put(man_str)
                 print(f'man_str: {man_str}')
             
 
