@@ -3,23 +3,21 @@ from kivy.clock import Clock
 import asyncio
 import json
 
-
 class AccHelper:
     sensorEnabled: bool = False
     x = 0
     y = 0
     z = 0
     def run(self, acc_q: asyncio.Queue) -> None:
-        print('run_acc')
+        print(f'in_accelerometer')
         self.acc_q = acc_q
         if platform == 'android' or platform == 'ios':
             from plyer import accelerometer
             self.accelerometer = accelerometer
             try:
-                print(f'in_acc')
                 if not self.sensorEnabled:
                     self.accelerometer.enable()
-                    print('acc_enable')
+                    print('accelerometer_enable')
                     asyncio.ensure_future(self.get_acceleration(1))
                     self.sensorEnabled = True
                     self.init_velo = 0
@@ -32,15 +30,14 @@ class AccHelper:
 
     async def get_acceleration(self, dt):
         while self.sensorEnabled:
-            val = self.accelerometer.acceleration[:3]
-            if not val == (None,None,None):
-               self.x = val[0]
-               self.y = val[1]
-               self.z = val[2]
-               print(f'accelerometer_values: {val}')
+            value = self.accelerometer.acceleration[:3]
+            if not value == (None,None,None):
+               self.x = value[0]
+               self.y = value[1]
+               self.z = value[2]
+               print(f'accelerometer_values: {value}')
                try:
-                  # await self.acc_q.put(json.dumps({'acc_x': val[0]}))
-                  self.acc_q.put_nowait(json.dumps({'acc_y': self.y}))
+                  self.acc_q.put_nowait(json.dumps({'acceleration_y': self.y}))
                except Exception as e:
-                  print(f'EXCEPTION ACC :: {e}')
+                  print(f'EXCEPTION ACCELEROMETER :: {e}')
             await asyncio.sleep(dt)

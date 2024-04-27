@@ -1,42 +1,36 @@
+#Librerias
+import os
+import asyncio
+import json
+
+# Importar librerias para creación de app Kivy e importación de componentes de design kivy
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.utils import platform
-import os
-import asyncio
-import json
-
 from kivy.uix.spinner import Spinner, SpinnerOption
 from kivy.uix.dropdown import DropDown
 from CircularProgressBar import CircularProgressBar
+from kivy.factory import Factory
 
+# Importar script BLE, gpshelper y acchelper
 from BLE import Connection, communication_manager
 from gpshelper import GpsHelper
 from AccHelper import AccHelper
-#from GyroHelper import GyroHelper
-from kivy.factory import Factory
 
-# ADDRESS, UUID = "78:21:84:9D:37:10", "0000181a-0000-1000-8000-00805f9b34fb"
+# Variables globales
 ADDRESS, UUID = None, None
-GPS_ON = True
-DEBUG_GPS = False
 disconnect_flag = {'disconnect': False}
 
 
 class MainWindow(Screen): pass
-
-
 class SecondaryWindow(Screen): pass
-
-
 class WindowManager(ScreenManager): pass
-
-
 class SpinnerDropdown(DropDown): pass
 
 
-class Main(MDApp):
+class App(MDApp):
     screen_flag = True
     dialog = None
     send_q = asyncio.Queue()
@@ -51,9 +45,8 @@ class Main(MDApp):
         """setting design for application widget development specifications on design.kv"""
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.primary_palette = 'Gray'
-        # GPS setup and start
-        if GPS_ON:
-            self.get_permissions()
+        # Solicitar permisos para GPS
+        self.get_permissions()
         return Builder.load_file(filename='design.kv')
 
     async def launch_app(self):
@@ -106,7 +99,6 @@ class Main(MDApp):
                     print('Got all permissions')
                 else:
                     print('Did not get all permissions')
-
             try:
                 request_permissions(
                     [Permission.ACCESS_COARSE_LOCATION, Permission.ACCESS_FINE_LOCATION, Permission.BLUETOOTH,
@@ -116,79 +108,39 @@ class Main(MDApp):
             except Exception as e:
                 print(e)
 
-    def connect_ble(self, touch: bool) -> None:
+    def start_BLE(self, touch: bool) -> None:
         """Function handling BLE connection between App and ESP32"""
         if touch:
             self.root.get_screen('main_window').ids.spinner.active = True
             try:
-                if DEBUG_GPS:
-                    self.root.current = 'secondary_window'
-                else:
-                    self.ble_task = asyncio.create_task(
-                        run_BLE(self, self.send_q, self.battery_q, self.drop_q, self.angle_q, self.man_q))
+                self.ble_task = asyncio.create_task(run_BLE(self, self.send_q, self.battery_q, self.drop_q, self.angle_q, self.man_q))
                 self.gps_task = GpsHelper().run(self.speed_q)
                 self.update_battery_task = asyncio.ensure_future(self.update_battery_value())
                 self.update_speed_task = asyncio.ensure_future(self.update_speed_value())
-                #self.update_angle_task = asyncio.ensure_future(self.update_angle_value())
                 self.update_manipulation_task = asyncio.ensure_future(self.update_manipulation_value())
-
             except Exception as e:
                 print(e)
+                
 
-    def dropdown_clicked(self, _, value: str) -> None:
+    def device_clicked(self, _, value: str) -> None:
         """Handles events in main window dropdown"""
         if value == "ESP32":
-            self.dropdown_clicked_task = asyncio.ensure_future(self.dropdown_event_handler(value))
+            self.device_clicked_task = asyncio.ensure_future(self.device_event_selected(value))
 
-    async def dropdown_event_handler(self, value: str) -> None:
+    async def device_event_selected(self, value: str) -> None:
         await self.drop_q.put(value)
         self.root.get_screen('main_window').ids.spinner.active = True
 
-    def switch_state(self, _, value: bool) -> None:
+    def switch_state_motion_detect(self, _, value: bool) -> None:
         """Switch state for adaptive mode switch. When in adaptive mode, the slider is disabled"""
         if value:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
-            self.send_q.put_nowait(json.dumps({'adapt': 1}))
-            self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen(
-                'secondary_window').ids.adapt_slider.min
+            self.send_q.put_nowait(json.dumps({'adaptationMode': 1}))
+            self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min
         else:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
-            self.send_q.put_nowait(json.dumps({'adapt': 0}))
+            self.send_q.put_nowait(json.dumps({'adaptationMode': 0}))
 
-    def slider_on_value(self, _, value: int) -> None:
-        """Sends percentage of assistance wanted to ESP32
-        In automatic mode: Use BATTERY and ACCELEROMETER values to determine percentage of use"""
-        label = 'slider'
-        if self.per_button_pressed:
-            self.read_slider_text.text = f'{value} %'
-            value = int(180 * value / 100)
-            label = 'slider_per'
-        if self.km_button_pressed:
-            value = value
-            label = 'slider_km'
-        self.slider_label = label
-        self.slider_value = value
-        if label == 'slider_km':
-            self.sp_button.text = f'SP: {value}'
-            self.read_slider_text.text = f'{value} km/h'
-
-        if value == self.root.get_screen('secondary_window').ids.adapt_slider.max:
-            self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "red"
-            if not self.slider_flag:
-                self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
-                self.slider_flag = True
-        elif value == self.root.get_screen('secondary_window').ids.adapt_slider.min and not self.slider_flag:
-            self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
-            self.slider_flag = True
-        else:
-            self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "white"
-            self.slider_flag = False
-
-    def slider_touch_up(self, *args) -> None:
-        try:
-            self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
-        except asyncio.QueueFull:
-            pass
 
     def slider_unit_km(self, touch: bool) -> None:
         if touch:
@@ -214,29 +166,46 @@ class Main(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#99998F"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#99998F"
 
-    def send_angle(self, touch: bool) -> None:
-        print('in_touch_angle')
-        if touch:
-            try:
-                self.send_q.put_nowait(json.dumps({'set_angle': int(self.set_angle)}))
-                print(f'set_angle : {self.set_angle}')
-            # self._pressed = True
-            except Exception as e:
-                print(f'EXCEPTION IN ANGLE : {e}')
 
-    async def update_angle_value(self) -> None:
-        while True:
-            print('in_angle')
-            try:
-                set_angle = await self.angle_q.get()
-                set_angle = float(set_angle)
-                print(f'angle -> {set_angle}')
-                self.an_button.text = f'Angle : {set_angle}°'
-            except Exception as e:
-                print(f'EXCEPTION IN ANGLE : {e}')
-                await asyncio.sleep(1.0)
-            print(f'angle displayed: {set_angle}')
-            self.set_angle = set_angle
+    def slider_on_value(self, _, value: int) -> None:
+        """Sends percentage of assistance wanted to ESP32
+        In automatic mode: Use BATTERY and ACCELEROMETER values to determine percentage of use"""
+
+        label = 'slider'
+
+        if self.per_button_pressed:
+            self.read_slider_text.text = f'{value} %'
+            value = int(180 * value / 100)
+            label = 'slider_per'
+
+        elif self.km_button_pressed:
+            self.read_slider_text.text = f'{value} km/h'
+            self.sp_button.text = f'SP: {value}'
+            value = value
+            label = 'slider_km'
+
+        # Almacenar si la app esta en modo Automatico (km) o Manual(percentage) y el valor de la asistencia requerida 
+        self.slider_label = label
+        self.slider_value = value
+            
+        if value == self.root.get_screen('secondary_window').ids.adapt_slider.max:
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "red"
+            if not self.slider_flag:
+                self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
+                self.slider_flag = True
+        elif value == self.root.get_screen('secondary_window').ids.adapt_slider.min and not self.slider_flag:
+            self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
+            self.slider_flag = True
+        else:
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_text_color = "white"
+            self.slider_flag = False
+
+    def slider_touch_up(self, *args) -> None:
+        try:
+            self.send_q.put_nowait(json.dumps({self.slider_label: self.slider_value}))
+        except asyncio.QueueFull:
+            pass
+
 
     async def update_manipulation_value(self) -> None:
         """FOR DEBUGGING PURPOSES"""
@@ -245,7 +214,7 @@ class Main(MDApp):
             try:
                 manip = await self.man_q.get()
                 manip = int(manip)
-                self.manip_button.text = f'M: {manip}'  # TODO: convert to percentage
+                self.manip_button.text = f'M: {manip}'  
             except Exception as e:
                 print(f'EXCEPTION IN MANIP: {e}')
                 await asyncio.sleep(1.0)
@@ -404,10 +373,9 @@ async def run_BLE(app: MDApp, send_q: asyncio.Queue, battery_q: asyncio.Queue, d
 if __name__ == '__main__':
     async def mainThread():
         """Creating main thread for asynchronous task definition"""
-        BikeApp = Main()
-        a = asyncio.create_task(BikeApp.start())
-        (done, pending) = await asyncio.wait({a}, return_when='FIRST_COMPLETED')
-
+        BikeApp = App()
+        task_runApp = asyncio.create_task(BikeApp.start())
+        (done, pending) = await asyncio.wait({task_runApp}, return_when='FIRST_COMPLETED')
 
     loop = asyncio.get_event_loop()
     asyncio.run(mainThread())

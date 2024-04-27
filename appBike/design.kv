@@ -221,7 +221,7 @@ WindowManager:
             on_release:
                 self.md_bg_color = (153/255, 153/255, 143/255, 1)
                 self.text_color = [0, 0, 0, 1]
-                app.connect_ble(*args)
+                app.start_BLE(*args)
 
         # "Button Menú despegable"
         Spinner:
@@ -467,7 +467,7 @@ WindowManager:
                             track_color_active: 0.4, 0.898, 0.223, 1
                             pos_hint: {'center_x':0.5,'center_y':0.5}
                             on_active:
-                                app.switch_state(*args)
+                                app.switch_state_motion_detect(*args)
 
                 # Label Mode
                 Label:

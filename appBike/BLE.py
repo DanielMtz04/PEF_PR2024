@@ -1,4 +1,3 @@
-import asyncio
 from bleak.backends.p4android.client import BleakClientP4Android
 from bleak.backends.p4android.scanner import BleakScannerP4Android
 from bleak import BleakScanner, BleakClient
@@ -7,13 +6,11 @@ from datetime import datetime
 from typing import Any, Union
 import uuid as ui
 import json
-
+import asyncio
 
 class Connection:
-    # cambiar
-    #client: BleakClient = None
+    
     client: BleakClientP4Android = None
-    flag_search = False
 
     def __init__(self,
                  loop: asyncio.AbstractEventLoop,
@@ -46,43 +43,43 @@ class Connection:
         self.connected = False
         print(f"Disconnected from {self.connected_device.name}!")
 
-    def angle_refresh(self, angle_str) -> None:
-        self.app.root.get_screen('secondary_window').ids.angle_button.text = f'Angle : {angle_str}°'
-
     async def manager(self) -> None:
-        """Connection manager. Makes sure that client exists and establishes connection"""
-        print("Starting connection manager.")
-        while True:
-            if self.client:
-                await self.connect()
-                await asyncio.sleep(1.0)
-            else:
-                try:
-                    await self.select_device()
-                except Exception as e:
-                    print(e)
-                await asyncio.sleep(3.0)
+            """Connection manager. Makes sure that client exists and establishes connection"""
+            print("Starting connection manager.")
+            while True:
+                if self.client:
+                    await self.connect_client()
+                    await asyncio.sleep(1.0)
+                else:
+                    try:
+                        await self.search_device()
+                    except Exception as e:
+                        print(e)
+                    await asyncio.sleep(3.0)
 
-    async def connect(self) -> None:
+    async def connect_client(self) -> None:
         """Connection mainframe between app and ESP32.
-            + Contains select_device() and discover_device() as alternate protocol if desired object is not found"""
-        print('in connect')
+            + Contains search_device() and scann_devicesBLE() as alternate protocol if desired object is not found"""
+        
+        print('in connection client')
+
         if self.connected:
             return
+        
         while True:
             try:
-                print('trying to connect to device...')
+                print('Trying to connect to device...')
                 await self.client.connect()
                 self.connected = self.client.is_connected
-                print(f"connection status: {self.connected}")
+                print(f"Connection status: {self.connected}")
+
                 if self.connected:
                     try:
-                        # self.client.set_disconnected_callback(self.on_disconnect)
                         print(self.client.services.characteristics)
-                        self.set_connect_flag()  # setting flag into asyncio notify
+                        self.set_connect_flag()  
                         await self.client.start_notify(self.read_char, self.notification_handler)
                     except Exception as e:
-                        print(f'IN EXCEPTION TRYING TO CONNECT {e}')
+                        print(f'EXCEPTION TRYING TO CONNECT {e}')
                     while True:
                         if not self.connected:
                             self.app.root.current = 'main_window'
@@ -90,51 +87,47 @@ class Connection:
                         await asyncio.sleep(10.0)
                 else:
                     print(f"Failed to connect to {self.connected_device.name}")
+
             except Exception as e:
                 print(f"IN EXCEPTION CLIENT {e}")
                 self.connected = False
                 self.app.root.get_screen('main_window').ids.device_dropdown.text = '...'
                 self.app.root.get_screen('main_window').ids.spinner.active = False
                 self.app.root.get_screen('main_window').ids.device_dropdown.disabled = False
-                # CREATE ERROR MESSAGE:::
             finally:
                 break
 
-    async def select_device(self, uuid: str = None, address: str = None) -> None:
+    async def search_device(self, uuid: str = None, address: str = None) -> None:
+            
         print(f"Bluetooh LE hardware warming up...{datetime.now()}")
         await asyncio.sleep(3.0)  # Wait for BLE to initialize.
         print(datetime.now())
+
         if self.uuid and self.address:
             self.connected_device = [uuid, address]
-            print('in self.client')
+            print('In self.client')
             while True:
-                # cambiar
-                #self.client, _ = BleakClient(address, loop=self.loop)
                 self.client, _ = BleakClientP4Android(address, loop=self.loop)
                 print(f"in connection protocol")
 
                 if self.client:
-                    print("breaking away")
+                    print("Breaking away")
                     break
                 else:
-                    print('device not found')
+                    print('Device not found')
                     await asyncio.sleep(1.0)
         else:
-            self.flag_search = True
-            await self.discover_device()
+            await self.scann_devicesBLE()
 
-    def set_connect_flag(self):
-        self.flag.set()
-
-    async def discover_device(self) -> None:
+    async def scann_devicesBLE(self) -> None:
 
         dropdown_devices = list()
         dropdown_dict = dict()
         device_found = False
         response = -1
         while not device_found:
-
             devices = await asyncio.create_task(BleakScanner.discover())
+            
             for i, device in enumerate(devices):
                 if device.name != None:
                     print(f"{i}: {device.name}, {device.address}")
@@ -149,11 +142,8 @@ class Connection:
             self.app.root.get_screen('main_window').ids.device_dropdown.width = self.app.root.width - 200
             self.app.root.get_screen('main_window').ids.device_dropdown.values = dropdown_devices
 
-
-
             device = await self.drop_q.get()
-            print("HOLAAAA")
-            print(device)
+            print(f'Device select: {device}')
             response = dropdown_dict[device]
 
             if devices:
@@ -163,13 +153,16 @@ class Connection:
         print(f"Connecting to {devices[response].name}")
         self.connected_device = devices[response]
         try:
-            # self.client = BleakClientP4Android(address_or_ble_device=devices[response].address,services=[(self.p_read_char.hex)], loop=self.loop)
             self.client = BleakClient(address_or_ble_device=devices[response].address, loop=self.loop)
-            # print(f"Got client: {self.client.services.characteristics}")
-            # print(f'CLient services: {self.client.get_services()}')
         except Exception as e:
             print(f"There was a problem connecting to device... {e}")
 
+    def notification_handler(self, sender: str, data: Any):
+        self.rx_data.append(int.from_bytes(data, byteorder="big"))
+        self.record_time_info()
+        if len(self.rx_data) >= self.dump_size:
+            self.clear_lists()
+    
     def record_time_info(self) -> None:
         present_time = datetime.now()
         self.rx_timestamps.append(present_time)
@@ -180,16 +173,15 @@ class Connection:
         self.rx_data.clear()
         self.rx_delays.clear()
         self.rx_timestamps.clear()
+    
+    def set_connect_flag(self):
+        self.flag.set()
 
-    def notification_handler(self, sender: str, data: Any):
-        self.rx_data.append(int.from_bytes(data, byteorder="big"))
-        self.record_time_info()
-        if len(self.rx_data) >= self.dump_size:
-            # self.data_dump_handler(self.rx_data, self.rx_timestamps, self.rx_delays)
-            self.clear_lists()
-
-    def restaurar(self):
+    def restore(self):
         self.app.root.get_screen('main_window').ids.spinner.active = False
+    
+    def angle_refresh(self, angle_str) -> None:
+        self.app.root.get_screen('secondary_window').ids.angle_button.text = f'Angle : {angle_str}°'
 
 
 async def communication_manager(connection: Connection,
@@ -198,11 +190,11 @@ async def communication_manager(connection: Connection,
                                 man_q: asyncio.Queue, disconnect_flag: dict):
     """In charge of sending and receiving information
         + IMPORTANT to pair write and read characteristics between App and ESP32"""
-    # connection.restaurar()
+  
     buffer = list()
     while True:
         if disconnect_flag.get('disconnect', True):
-            connection.restaurar()
+            connection.restore()
             await connection.client.disconnect()
             return
         if connection.client and connection.connected:
@@ -225,10 +217,13 @@ async def communication_manager(connection: Connection,
             except asyncio.QueueEmpty:
                 print('EXCEPTION_BLE')
             await asyncio.sleep(0.1)
+
+            # Read meesage sent from ESP
             msg_read = await connection.client.read_gatt_char(read_char)
             print(f"message received -> {msg_read.decode()}")
+            msg_json = json.loads(msg_read.decode())  
 
-            msg_json = json.loads(msg_read.decode())  # converts bytes to JSON
+            # Read battery
             try:
                 bat_str = msg_json['battery']
             except Exception as e:
@@ -236,6 +231,7 @@ async def communication_manager(connection: Connection,
                 bat_str = None
             if bat_str is not None:
                 await battery_q.put(bat_str)
+            # Read angle    
             try:
                 angle_str = msg_json['angle']
                 print(f'angle_str : {angle_str}')
@@ -243,23 +239,16 @@ async def communication_manager(connection: Connection,
             except Exception as e:
                 print(f'EXCEPTION JSON ANGLE: {e}')
                 angle_str = None
+            # Read manipulation
             try:
                 man_str = msg_json['manipulation']
             except Exception as e:
                 print(f'EXCEPTION JSON MAN: {e}')
                 man_str = None
-            if angle_str is not None:
-                print(f'putting {angle_str} on q')
-                await angle_q.put(angle_str)
             if man_str is not None:
                 await man_q.put(man_str)
                 print(f'man_str: {man_str}')
-            try:
-                flag_str = msg_json['flag']
-            except Exception as e:
-                flag_str = None
-            if flag_str is not None:
-                await flag_q.put(flag_str)
+            
 
         else:
             await asyncio.sleep(2.0)
