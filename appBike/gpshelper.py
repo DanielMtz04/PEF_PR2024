@@ -4,7 +4,6 @@ import asyncio
 from math import asin, cos, pi, sqrt
 import time
 import csv
-from kalmanfilter import KalmanWrapper
 
 
 class GpsHelper:
@@ -14,17 +13,16 @@ class GpsHelper:
     csv_debug: list = []
     i: int = 0
 
-    def run(self, speed_queue: asyncio.Queue) -> None:
-        self.speed_queue = speed_queue
+    def run(self, speed_q: asyncio.Queue) -> None:
+        self.speed_q = speed_q
         self.gps_info = []
-        print('Run gps')
+        print('in_gps')
 
         # configure GPS
         if platform == 'android' or platform == 'ios':
             from plyer import gps
             gps.configure(on_location=self.on_location,
                           on_status=self.on_auth_status)
-            self.kf = KalmanWrapper()
             gps.start(minTime=self.gps_time, minDistance=self.gps_min_distance)
             self.start = time.perf_counter()
 
@@ -32,9 +30,6 @@ class GpsHelper:
         """callback used to gather relevant information"""
         # print(f"on_location ->>> {kwargs}")
         print(f'on_loc -> {time.time()}')
-        self.kf.predict()
-        self.kf.update(kwargs['speed'])
-        # velo after kalman = self.kf.x
         if kwargs['accuracy'] < 25:
             self.velocity = (kwargs['speed'] * 3.6)
             self.i += 1
@@ -43,7 +38,7 @@ class GpsHelper:
             self.gps_info.append(kwargs)
             print(f'on_location -> {self.gps_info}, {self.i}')
             # FILTERING INFORMATION NEEDED:
-            self.speed_queue.put_nowait(self.velocity)
+            self.speed_q.put_nowait(self.velocity)
         else:
             print(f'on_location_ERROR: Accuracy too low!')
         if self.i > 15:
@@ -55,8 +50,8 @@ class GpsHelper:
             self.gps_info.pop(0)
             print(f'true_speed_haver: {true_speed}')
             print(f'gps_speed: {self.velocity}')
-            # self.speed_queue.put_nowait(true_speed)
-            # self.speed_queue.put_nowait(self.velocity)
+            # self.speed_q.put_nowait(true_speed)
+            # self.speed_q.put_nowait(self.velocity)
         # print(f'time_passed {time.perf_counter()-self.start}')
 
     def calculate_distance(self) -> float:

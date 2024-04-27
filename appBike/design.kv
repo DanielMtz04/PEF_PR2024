@@ -235,7 +235,7 @@ WindowManager:
             size: 0,0
             text_color: 0,0,0,0
             background_color: 0.6, 0.6, 0.561, 1
-            on_text: app.device_clicked(*args)
+            on_text: app.dropdown_clicked(*args)
 
         # "Animación para indicar acción"
         MDSpinner:
@@ -360,7 +360,7 @@ WindowManager:
 
                 # Se define un circular progress como indicador de velocidad en Km
                 CircularProgressBar:
-                    id: speed_indicator
+                    id: speed
                     text: '0 km/h'
                     font_size: 52
                     pos_hint: {'center_x': 0.5, 'center_y': 0.7}
@@ -384,7 +384,7 @@ WindowManager:
 
                 # Se define un circular progress como indicador de bateria en %
                 CircularProgressBar:
-                    id: baterry_indicator
+                    id: circle_progress
                     text: '0%'
                     font_size: 52
                     pos_hint: {'center_x': 0.5, 'center_y': 0.2}
@@ -407,7 +407,7 @@ WindowManager:
 
                 # Se define un indicador del Set Point deseado
                 MDRectangleFlatButton:
-                    id: sp_indicator
+                    id: sp_button
                     text: 'SP: 0'
                     pos_hint: {'center_x': 0.3, 'center_y': 0.5}
                     markup: True
@@ -418,7 +418,7 @@ WindowManager:
 
                 # Se define un indicador de la Manipulación
                 MDRectangleFlatButton:
-                    id: manip_indicator
+                    id: manip_button
                     text: 'M: 0'
                     pos_hint: {'center_x': 0.7, 'center_y': 0.5}
                     markup: True
@@ -467,7 +467,7 @@ WindowManager:
                             track_color_active: 0.4, 0.898, 0.223, 1
                             pos_hint: {'center_x':0.5,'center_y':0.5}
                             on_active:
-                                app.switch_motion_detect(*args)
+                                app.switch_state(*args)
 
                 # Label Mode
                 Label:
@@ -547,14 +547,14 @@ WindowManager:
 
                         #text_color: (1, 1, 1, 1)
                         #md_bg_color: (36/255, 75/255, 94/255, 1)
-                        #id: angle_indicator
+                        #id: angle_button
                         #text: 'Angle : 0°'
                         #pos_hint: {'center_x': 0.5, 'center_y': 0.4}
 
 
                     # Se define un indicador del Set Point deseado
                     MDRectangleFlatButton:
-                        id: angle_indicator
+                        id: angle_button
                         text: 'Angle : 0°'
                         font_size: 54
                         text_color: 1,1,1,1

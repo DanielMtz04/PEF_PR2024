@@ -34,14 +34,13 @@ class AccHelper:
         while self.sensorEnabled:
             val = self.accelerometer.acceleration[:3]
             if not val == (None,None,None):
-                self.x = val[0]
-                self.y = val[1]
-                self.z = val[2]
-                print(f'accelerometer_values: {val}')
-                try:
-                    self.acc_q.put_nowait(json.dumps({'acc_y': self.y}))
-                    print("Acceleration: ")
-                    print(self.y)
-                except Exception as e:
-                    print(f'EXCEPTION ACC :: {e}')
+               self.x = val[0]
+               self.y = val[1]
+               self.z = val[2]
+               print(f'accelerometer_values: {val}')
+               try:
+                  # await self.acc_q.put(json.dumps({'acc_x': val[0]}))
+                  self.acc_q.put_nowait(json.dumps({'acc_y': self.y}))
+               except Exception as e:
+                  print(f'EXCEPTION ACC :: {e}')
             await asyncio.sleep(dt)
