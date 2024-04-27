@@ -11,9 +11,9 @@ from kivy.uix.spinner import Spinner, SpinnerOption
 from kivy.uix.dropdown import DropDown
 from CircularProgressBar import CircularProgressBar
 
-from ble import Connection, communication_manager
+from BLE import Connection, communication_manager
 from gpshelper import GpsHelper
-from acchelper import AccHelper
+from AccHelper import AccHelper
 #from GyroHelper import GyroHelper
 from kivy.factory import Factory
 
