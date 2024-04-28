@@ -42,27 +42,25 @@ class App(MDApp):
     manipulation_queue = asyncio.Queue()
     
     def build(self):
-        """setting design for application widget development specifications on design.kv"""
+        """ Configura diseño inicial de la aplicación, obtiene permisos para gps y ble y carga archivo de diseño kv"""
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.primary_palette = 'Gray'
-        # Solicitar permisos para GPS
         self.get_permissions()
         return Builder.load_file(filename='design.kv')
 
     async def launch_app(self):
-        """Asyncronous function for kivy app start"""
+        """Lazamiento de aplicación con el manejo de metodos asincronos"""
         await self.async_run(async_lib='asyncio')
 
     async def start(self):
-        """Asyncronous app making sure start is awaited as coroutine"""
+        """Inicia la app de forma asincrona esperando que la tarea de lanzamiento finalize"""
         task = asyncio.create_task(self.launch_app())
         (_, pending) = await asyncio.wait({task}, return_when='FIRST_COMPLETED')
 
     def on_start(self):
-        """On start method for building desired variables for later use"""
+        """Metodo que se llama al iniciar la aplicación, configurando los componentes iniciales de la interfz gráfica"""
         Logger.info("Called start")
 
-        # Renames certain components from app that will be used in other functions
         self.button = self.root.get_screen('main_window').ids.ble_button
         self.root.get_screen('main_window').ids.device_dropdown.text = ''
         self.root.get_screen('main_window').ids.device_dropdown.size = (0, 0)
@@ -91,7 +89,7 @@ class App(MDApp):
         self.test_counter = 0
 
     def get_permissions(self):
-        # Request permissions on Android
+        """Solicita permisos de acceso a ubicación y bluetooth"""
         if platform == 'android':
             from android.permissions import Permission, request_permissions
             def callback(permission, results):
@@ -109,7 +107,7 @@ class App(MDApp):
                 print(e)
 
     def start_BLE(self, touch: bool) -> None:
-        """Function handling BLE connection between App and ESP32"""
+        """Metodo que inicia el proceso de conexión y comunicación BLE y monitoreo de sensores(gps y acelerometro)"""
         if touch:
             self.root.get_screen('main_window').ids.spinner.active = True
             try:
@@ -123,16 +121,17 @@ class App(MDApp):
                 
 
     def device_clicked(self, _, value: str) -> None:
-        """Handles events in main window dropdown"""
+        """Metodo que inicializa el proceso de selección de dispositvo"""
         if value == "ESP32":
             self.device_clicked_task = asyncio.ensure_future(self.device_event_selected(value))
 
     async def device_event_selected(self, value: str) -> None:
+        """Metodo que maneja el proceso de almacenar el dispostivo seleccionado en una queue y la transición a conexión"""
         await self.deviceSelect_queue.put(value)
         self.root.get_screen('main_window').ids.spinner.active = True
 
     def switch_state_motion_detect(self, _, value: bool) -> None:
-        """Switch state for adaptive mode switch. When in adaptive mode, the slider is disabled"""
+        """Metodo que maneja el cambio de estado del switch de Motion Detect y almacena valor actual en una queue"""
         if value:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.dataTx_queue.put_nowait(json.dumps({'adaptationMode': 1}))
@@ -143,6 +142,7 @@ class App(MDApp):
 
 
     def slider_unit_km(self, touch: bool) -> None:
+        """Metodo que configura el slider para controlar asistencia con valores en km/h"""
         if touch:
             self.km_button_pressed = True
             self.per_button_pressed = False
@@ -155,6 +155,7 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#A7D0D2"
 
     def slider_unit_per(self, touch: bool) -> None:
+        """Metodo que configura el slider para controlar asistencia con valores en porcentajes"""
         if touch:
             self.km_button_pressed = False
             self.per_button_pressed = True
@@ -168,8 +169,8 @@ class App(MDApp):
 
 
     def slider_on_value(self, _, value: int) -> None:
-        """Sends percentage of assistance wanted to ESP32
-        In automatic mode: Use BATTERY and ACCELEROMETER values to determine percentage of use"""
+        """Metodo que actualiza en la interfaz el valor que el usuario selecciona en el slider de control de asistencia y
+           en el modo automatico tambien actualiza el valor de Set Point e igualmente manda el valor de asistencia a la ESP32"""
 
         label = 'slider'
 
@@ -184,7 +185,7 @@ class App(MDApp):
             value = value
             label = 'slider_km'
 
-        # Almacenar si la app esta en modo Automatico (km) o Manual(percentage) y el valor de la asistencia requerida 
+        # Almacenan si la app esta en modo Automatico (km) o Manual(percentage) y el valor de la asistencia requerida 
         self.slider_label = label
         self.slider_value = value
             
@@ -201,14 +202,14 @@ class App(MDApp):
             self.slider_flag = False
 
     def slider_touch_up(self, *args) -> None:
+        """Metodo que envia a ESP el valor ultimo del control deslizante de asistencia al momento que el usuario deja de interactuar con el slider"""
         try:
             self.dataTx_queue.put_nowait(json.dumps({self.slider_label: self.slider_value}))
         except asyncio.QueueFull:
             pass
 
-
     async def update_manipulation_value(self) -> None:
-        """FOR DEBUGGING PURPOSES"""
+        """Metodo que actualiza en la interfaz el valor de manipulación al encontrarse el sistema en modo automatico"""
         while True:
             print('in_manipulation')
             try:
@@ -220,7 +221,7 @@ class App(MDApp):
                 await asyncio.sleep(1.0)
 
     async def update_speed_value(self) -> None:
-        """Monitors current speed of bike"""
+        """Metodo que actualiza el valor de la velocidad obtenida a traves del GPS del celcular"""
         speed = 0
         while True:
             print("in_speed")
@@ -239,7 +240,7 @@ class App(MDApp):
                 self.speedmeter.text = f'{int(speed)} km/h'
 
     async def update_battery_value(self) -> None:
-        """Monitors Battery life from bike"""
+        """Metodo que actualiza la carga restante en la bateria del sistema electronico"""
         max_battery_voltage = 23.7  # V //Voltage gotten when fully charged
         min_battery_voltage = 20.0  # V //Lowest voltage before battery starts getting damaged
         battery_life = 0
@@ -261,6 +262,7 @@ class App(MDApp):
                 print(f'Exception in battery:: {e}')
                 await asyncio.sleep(2.0)
 
+    # Metodos para la desconexión de app del dispositivo ESP y para la acción de cerrar app
     # Popup Disconnect
     def screen_flag_1(self, touch: bool) -> None:
         self.screen_flag = True
@@ -335,10 +337,11 @@ class App(MDApp):
 
 async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asyncio.Queue, deviceSelect_queue: asyncio.Queue,
                   angle_queue: asyncio.Queue, manipulation_queue: asyncio.Queue) -> None:
-    """Asyncronous connection protocol for BLE"""
+    """Método que inicia la conexión por el protocolo de BLE, asi como la comunicación entre servidor y cliente y el manejo de queues
+       para el envio y repcion de datos"""
+    
     print('in run_BLE')
     read_char = "00002A3D-0000-1000-8000-00805f9b34fb"
-    # write_char = "00002A58-0000-1000-8000-00805f9b34fb" ## DEPRECATED
     flag = asyncio.Event()
     connection = Connection(loop=loop,
                             uuid=UUID,
@@ -372,7 +375,7 @@ async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asynci
 
 if __name__ == '__main__':
     async def mainThread():
-        """Creating main thread for asynchronous task definition"""
+        """Hilo principal para el lanzamiento de la aplicación"""
         BikeApp = App()
         task_runApp = asyncio.create_task(BikeApp.start())
         (done, pending) = await asyncio.wait({task_runApp}, return_when='FIRST_COMPLETED')
