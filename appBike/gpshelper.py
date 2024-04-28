@@ -20,7 +20,6 @@ class GpsHelper:
             self.start = time.perf_counter()
 
     def on_location(self, *args, **kwargs):
-        """callback used to gather relevant information"""
         self.velocity = (kwargs['speed'] * 3.6)
         self.velocity_queue.put_nowait(self.velocity)
         

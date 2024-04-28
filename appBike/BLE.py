@@ -39,27 +39,27 @@ class Connection:
         self.rx_delays = []
 
     async def on_disconnect(self) -> None:
-        """Protocol on disconnect of BLE"""
+        """Metodo asincrono que se ejecuta al desconectarde de dispostivo BLE"""
         self.connected = False
         print(f"Disconnected from {self.connected_device.name}!")
 
     async def manager(self) -> None:
-            """Connection manager. Makes sure that client exists and establishes connection"""
-            print("Starting connection manager.")
-            while True:
-                if self.client:
-                    await self.connect_client()
-                    await asyncio.sleep(1.0)
-                else:
-                    try:
-                        await self.search_device()
-                    except Exception as e:
-                        print(e)
-                    await asyncio.sleep(3.0)
+        """Metodo que lleva a cabo a la conexión BLE, comienza la conexión una vez que el cliente exista, o busca primero 
+           el dispostivo si no existe en un principio"""
+        while True:
+            if self.client:
+                await self.connect_client()
+                await asyncio.sleep(1.0)
+            else:
+                try:
+                    await self.search_device()
+                except Exception as e:
+                    print(e)
+                await asyncio.sleep(3.0)
 
     async def connect_client(self) -> None:
-        """Connection mainframe between app and ESP32.
-            + Contains search_device() and scann_devicesBLE() as alternate protocol if desired object is not found"""
+        """Metodo principal de conexión con dispositivo BLE y configura la conexión para recibir datos de una caracteristica especifica 
+           a la cual se suscribe"""
         
         print('in connection client')
 
@@ -98,8 +98,10 @@ class Connection:
                 break
 
     async def search_device(self, uuid: str = None, address: str = None) -> None:
+        """Metodo que busca un dispositvo BLE por su UUID o dirección para crear un cliente, si no encuentra inicia el escaneo
+           para encontrar dispositivos disponibles"""
             
-        print(f"Bluetooh LE hardware warming up...{datetime.now()}")
+        print(f"bluetooth LE hardware warming up...{datetime.now()}")
         await asyncio.sleep(3.0)  # Wait for BLE to initialize.
         print(datetime.now())
 
@@ -120,7 +122,9 @@ class Connection:
             await self.scann_devicesBLE()
 
     async def scann_devicesBLE(self) -> None:
-
+        """Metodo principal para escanear dispostivos BLE y actualizar el menu desplegable e igualmente espera 
+           a que el dispositivo sea seleccionado"""
+        
         dropdown_devices = list()
         dropdown_dict = dict()
         device_found = False
@@ -179,6 +183,7 @@ class Connection:
 
     def restore(self):
         self.app.root.get_screen('main_window').ids.spinner.active = False
+        self.on_disconnect()
     
     def angle_refresh(self, angle_str) -> None:
         self.app.root.get_screen('secondary_window').ids.angle_button.text = f'Angle : {angle_str}°'
@@ -188,8 +193,7 @@ async def communication_manager(connection: Connection,
                                 write_char: str, read_char: str,
                                 dataTx_queue: asyncio.Queue, battery_queue: asyncio.Queue, angle_queue: asyncio.Queue,
                                 manipulation_queue: asyncio.Queue, disconnect_flag: dict):
-    """In charge of sending and receiving information
-        + IMPORTANT to pair write and read characteristics between App and ESP32"""
+    """Metodo que se encarga de manegar la comunicación bidireccional con dispostivo BLE"""
   
     buffer = list()
     while True:
