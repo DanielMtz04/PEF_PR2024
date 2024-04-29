@@ -2,6 +2,7 @@ from kivy.utils import platform
 from kivymd.uix.dialog import MDDialog
 import asyncio
 import time
+import json
 
 class GpsHelper:
     gps_time: float = 500
@@ -11,13 +12,17 @@ class GpsHelper:
     def run(self, velocity_queue: asyncio.Queue) -> None:
         print('in_gps')
         self.velocity_queue = velocity_queue
-    
+        asyncio.ensure_future(self.start_gps())
+
+    async def start_gps(self):
         # configure GPS
         if platform == 'android' or platform == 'ios':
             from plyer import gps
             gps.configure(on_location=self.on_location, on_status=self.on_auth_status)
             gps.start(minTime=self.gps_time, minDistance=self.gps_min_distance)
             self.start = time.perf_counter()
+        while True:
+            asyncio.sleep(1)
 
     def on_location(self, *args, **kwargs):
         self.velocity = (kwargs['speed'] * 3.6)

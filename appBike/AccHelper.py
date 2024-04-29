@@ -37,7 +37,8 @@ class AccHelper:
                self.z = value[2]
                print(f'accelerometer_values: {value}')
                try:
-                  self.acceleration_queue.put_nowait(json.dumps({'acceleration_y': self.y}))
+                  #self.acceleration_queue.put_nowait(json.dumps({'acceleration_y': self.y}))
+                  self.acceleration_queue.put_nowait(self.y)
                except Exception as e:
                   print(f'EXCEPTION ACCELEROMETER :: {e}')
             await asyncio.sleep(dt)

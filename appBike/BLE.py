@@ -185,8 +185,8 @@ class Connection:
         self.app.root.get_screen('main_window').ids.spinner.active = False
         self.on_disconnect()
     
-    def angle_refresh(self, angle_str) -> None:
-        self.app.root.get_screen('secondary_window').ids.angle_button.text = f'Angle : {angle_str}°'
+    #def angle_refresh(self, angle_str) -> None:
+        #self.app.root.get_screen('secondary_window').ids.angle_button.text = f'Angle : {angle_str}°'
 
 
 async def communication_manager(connection: Connection,
@@ -239,7 +239,7 @@ async def communication_manager(connection: Connection,
             try:
                 angle_str = msg_json['angle']
                 print(f'angle_str : {angle_str}')
-                connection.angle_refresh(angle_str)
+                #connection.angle_refresh(angle_str)
             except Exception as e:
                 print(f'EXCEPTION JSON ANGLE: {e}')
                 angle_str = None
