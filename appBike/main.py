@@ -2,6 +2,7 @@
 import os
 import asyncio
 import json
+import math
 
 # Importar librerias para creación de app Kivy e importación de componentes de design kivy
 from kivymd.app import MDApp
@@ -112,8 +113,10 @@ class App(MDApp):
             self.root.get_screen('main_window').ids.spinner.active = True
             try:
                 self.ble_task = asyncio.create_task(run_BLE(self, self.dataTx_queue, self.battery_queue, self.deviceSelect_queue, self.angle_queue, self.manipulation_queue))
+                self.gps_task = AccHelper().run(self.acceleration_queue)
                 self.gps_task = GpsHelper().run(self.velocity_queue)
                 self.update_battery_task = asyncio.ensure_future(self.update_battery_value())
+                self.update_acceleration_task = asyncio.ensure_future(self.update_acceleration_value())
                 self.update_speed_task = asyncio.ensure_future(self.update_speed_value())
                 self.update_manipulation_task = asyncio.ensure_future(self.update_manipulation_value())
             except Exception as e:
@@ -238,6 +241,22 @@ class App(MDApp):
             else:
                 self.speedmeter.set_value = speed - 25
                 self.speedmeter.text = f'{int(speed)} km/h'
+
+    async def update_acceleration_value(self) -> None:
+        """Metodo que actualiza el valor de la velocidad obtenida a traves del GPS del celcular"""
+        acceleration = 0
+        while True:
+            print("in_speed")
+            try:
+                acceleration = await self.acceleration_queue.get()
+                acceleration = float(acceleration)
+                print(f"acceleration-> {acceleration}")
+                await self.dataTx_queue.put(json.dumps({'acceleration_y': acceleration}))
+                anguloy = math.asin(acceleration / 9.81) * (180.0 / math.pi)
+                self.an_button.text = f'Angle : {anguloy}°'
+            except Exception as e:
+                print(f'Exception in angle:: {e}')
+                await asyncio.sleep(1.0)
 
     async def update_battery_value(self) -> None:
         """Metodo que actualiza la carga restante en la bateria del sistema electronico"""
@@ -365,7 +384,7 @@ async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asynci
         await connection.flag.wait()
     finally:
         print(f"flag status confirmed!")
-        AccHelper().run(dataTx_queue)
+        #AccHelper().run(dataTx_queue)
 
     try:
         app.root.current = 'secondary_window'
