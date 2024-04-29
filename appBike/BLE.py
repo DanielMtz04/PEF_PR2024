@@ -239,7 +239,7 @@ async def communication_manager(connection: Connection,
             try:
                 angle_str = msg_json['angle']
                 print(f'angle_str : {angle_str}')
-                connection.angle_refresh(angle_str)
+                #connection.angle_refresh(angle_str)
             except Exception as e:
                 print(f'EXCEPTION JSON ANGLE: {e}')
                 angle_str = None
