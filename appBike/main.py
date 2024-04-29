@@ -253,7 +253,7 @@ class App(MDApp):
                 anguloy = math.asin(acceleration / 9.81) * (180.0 / math.pi);
                 self.an_button.text = f'Angle : {anguloy}°'
             except Exception as e:
-                print(f'Exception in angle:: {e}')
+                print(f'Exception in acceleration:: {e}')
                 await asyncio.sleep(1.0)
            
 
