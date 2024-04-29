@@ -11,6 +11,7 @@ import asyncio
 class Connection:
     
     client: BleakClientP4Android = None
+    #client: BleakClient = None
 
     def __init__(self,
                  loop: asyncio.AbstractEventLoop,
@@ -110,6 +111,7 @@ class Connection:
             print('In self.client')
             while True:
                 self.client, _ = BleakClientP4Android(address, loop=self.loop)
+                #self.client, _ = BleakClient(address, loop=self.loop)
                 print(f"in connection protocol")
 
                 if self.client:

@@ -14,6 +14,8 @@ from kivy.uix.spinner import Spinner, SpinnerOption
 from kivy.uix.dropdown import DropDown
 from CircularProgressBar import CircularProgressBar
 from kivy.factory import Factory
+from kivymd.uix.button import MDFillRoundFlatButton
+from kivy.properties import ColorProperty, NumericProperty
 
 # Importar script BLE, gpshelper y acchelper
 from BLE import Connection, communication_manager
@@ -29,6 +31,11 @@ class MainWindow(Screen): pass
 class SecondaryWindow(Screen): pass
 class WindowManager(ScreenManager): pass
 class SpinnerDropdown(DropDown): pass
+
+
+class CustomButton(MDFillRoundFlatButton):
+    border_color = ColorProperty((0, 0, 0, 1))  # Negro por defecto
+    border_width = NumericProperty(1)  # Grosor del borde por defecto
 
 
 class App(MDApp):
@@ -88,6 +95,8 @@ class App(MDApp):
         self.slider_value = 0
         self.slider_flag = False
         self.test_counter = 0
+
+        self.root.current = 'secondary_window'
 
     def get_permissions(self):
         """Solicita permisos de acceso a ubicación y bluetooth"""
@@ -156,6 +165,12 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.color = "#A7D0D2"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#A7D0D2"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#A7D0D2"
+            # Modo manual desactivado
+            self.root.get_screen('secondary_window').ids.manual_button.border_color = (0, 0, 0, 0)  
+            self.root.get_screen('secondary_window').ids.manual_button.border_width = 6  
+            # Modo automatic activo
+            self.root.get_screen('secondary_window').ids.automatic_button.border_color = (0.4, 0.898, 0.223, 1)  
+            self.root.get_screen('secondary_window').ids.automatic_button.border_width = 6  
 
     def slider_unit_per(self, touch: bool) -> None:
         """Metodo que configura el slider para controlar asistencia con valores en porcentajes"""
@@ -169,6 +184,12 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.color = "#99998F"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#99998F"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#99998F"
+            # Modo automatic activo
+            self.root.get_screen('secondary_window').ids.automatic_button.border_color = (0, 0, 0, 0)  
+            self.root.get_screen('secondary_window').ids.automatic_button.border_width = 6 
+            # Modo manual desactivado
+            self.root.get_screen('secondary_window').ids.manual_button.border_color = (0.4, 0.898, 0.223, 1) 
+            self.root.get_screen('secondary_window').ids.manual_button.border_width = 6  
 
 
     def slider_on_value(self, _, value: int) -> None:

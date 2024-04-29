@@ -151,6 +151,14 @@ WindowManager:
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         halign: 'center'
 
+# Automatic and Manual Button Format
+<CustomButton>:
+    canvas.before:
+        Color:
+            rgba: self.border_color
+        Line:
+            width: self.border_width
+            rounded_rectangle: (self.x, self.y, self.width, self.height, self.height / 2)
 
 # Main Window
 <MainWindow>:
@@ -483,7 +491,8 @@ WindowManager:
                     size: root.width, root.height*0.3
 
                     # Button Manual
-                    MDFillRoundFlatButton:
+                    CustomButton:
+                        id: manual_button
                         text: '  Manual  '
                         font_size: 38
                         bold: True
@@ -496,8 +505,9 @@ WindowManager:
                             app.slider_unit_per(*args)
 
                     # Button Automatico
-                    MDFillRoundFlatButton:
-                        text: 'Automatic '
+                    CustomButton:
+                        id: automatic_button
+                        text: 'Automatic'
                         font_size: 38
                         bold: True
                         font_name: 'Roboto-Bold.ttf'
@@ -505,8 +515,10 @@ WindowManager:
                         markup: True
                         md_bg_color: (167/255, 208/255, 210/255, 1)
                         text_color: (18/255, 18/255, 18/255, 1)
-                        on_release:
-                            app.slider_unit_km(*args)
+                        on_release: app.slider_unit_km(*args)
+                        #border_color: (0, 0, 0, 0)  # Rojo
+                        #border_width: 2  # Grosor del borde de 2
+
 
                 MDBoxLayout:
                     size: root.width, root.height*0.1
