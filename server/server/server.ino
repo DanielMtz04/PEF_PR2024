@@ -18,11 +18,11 @@
 #define CHARACTERISTIC_UUID "00002A3D-0000-1000-8000-00805f9b34fb"
 
 #define PWM_PIN 16
-#define BATTERY_PIN 33
-#define BATTERY_READ_FLAG 32
-#define HALL_SENSOR_U_PIN 25
-#define HALL_SENSOR_V_PIN 26
-#define HALL_SENSOR_W_PIN 27
+#define BATTERY_PIN 34
+#define BATTERY_READ_FLAG 27
+#define HALL_SENSOR_U_PIN 5
+#define HALL_SENSOR_V_PIN 18
+#define HALL_SENSOR_W_PIN 19
 
 //---------------------- Variables para el envio y recepción de datos(ESP(Servidor)-APP(Cliente)) -----------------
 DynamicJsonDocument jsonDoc(512);
