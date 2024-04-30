@@ -169,7 +169,7 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.manual_button.border_color = (0, 0, 0, 0)  
             self.root.get_screen('secondary_window').ids.manual_button.border_width = 6  
             # Modo automatic activo
-            self.root.get_screen('secondary_window').ids.automatic_button.border_color = (0.4, 0.898, 0.223, 1)  
+            self.root.get_screen('secondary_window').ids.automatic_button.border_color = (47/255, 138/255, 283/255, 1)  
             self.root.get_screen('secondary_window').ids.automatic_button.border_width = 6  
 
     def slider_unit_per(self, touch: bool) -> None:
@@ -188,7 +188,7 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.automatic_button.border_color = (0, 0, 0, 0)  
             self.root.get_screen('secondary_window').ids.automatic_button.border_width = 6 
             # Modo manual desactivado
-            self.root.get_screen('secondary_window').ids.manual_button.border_color = (0.4, 0.898, 0.223, 1) 
+            self.root.get_screen('secondary_window').ids.manual_button.border_color = (47/255, 138/255, 283/255, 1) 
             self.root.get_screen('secondary_window').ids.manual_button.border_width = 6  
 
 
@@ -409,6 +409,8 @@ async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asynci
 
     try:
         app.root.current = 'secondary_window'
+        app.root.get_screen('secondary_window').ids.manual_button.border_color = (47/255, 138/255, 283/255, 1)
+        app.root.get_screen('secondary_window').ids.manual_button.border_width = 6 
     except Exception as e:
         print(f'EXCEPTION WHEN CHANGING WINDOW -> {e}')
 
