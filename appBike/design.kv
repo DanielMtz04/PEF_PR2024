@@ -44,10 +44,20 @@ WindowManager:
     bar_color: (0.274, 0.592, 0.702, 1)
    
 <CircularProgressBarGreen@CircularProgressBar>:
-    bar_color: (102/255, 229/255, 57/255, 1)
+    bar_color: (31/255, 218/255, 27/255, 1)
+
+<ShadowedNavItem>:
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.5  # Color negro con transparencia
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [10]
 
 # Automatic and Manual Button 
 <CustomButton>:
+    size_hint: None, None    
     canvas.before:
         Color:
             rgba: self.border_color
@@ -265,7 +275,7 @@ WindowManager:
         MDSpinner:
             id: spinner
             pos_hint: {'center_x':0.5,'center_y':0.5}
-            color: (0.274, 0.592, 0.702, 1)
+            color: (0, 189/255, 1, 1)
             size_hint: None, None
             size: dp(46), dp(46)
             active: False
@@ -293,11 +303,10 @@ WindowManager:
     MDBottomNavigation:
         id: nav
         panel_color: "#162F3C"
-        text_color_active: "#FFFFFF"
         text_color_normal: "#FFFFFF"
 
         #------------------------------------------------- Window 1 (Status) -------------------------------------------------
-        MDBottomNavigationItem:
+        ShadowedNavItem:
             name: 'screen 1'
             text: 'Status'
             on_tab_release: app.screen_flag_1(*args)
@@ -309,37 +318,35 @@ WindowManager:
             AnchorLayout:
                 anchor_x: 'center'
                 anchor_y: 'top'
-                padding: '10dp'
 
-                # Contenedor Top Bar Settings
+                # Se define el contenedor de la Top Bar
                 BoxLayout:
                     orientation: 'horizontal'
                     size_hint: None, None
-                    height: '60dp'
-                    width: dp(1420)
+                    height: '70dp'
+                    width: self.parent.width
 
-                    # Se dibuja la Top Bar Status
+                    # Se dibuja un rectangulo dentro del contenedor y se le asigan un color sólido
                     canvas.before:
                         Color:
                             rgba: (22/255, 47/255, 60/255, 1)
-                        RoundedRectangle:
+                        Rectangle:
                             pos: self.pos
                             size: self.size
-                            radius: [10]  
 
-                    # Etiqueta Top Bar Status
+                    # Se añade un label al contenedor
                     Label:
-                        text: 'Status'
-                        size_hint: 1, None  
-                        width: self.parent.width  
-                        font_size: '25sp'
-                        font_name: 'Roboto-Bold.ttf'
-                        color: 1, 1, 1, 1  
-                        height: '30dp'  
-                        halign: 'center'  
-                        valign: 'middle'  
-                        text_size: self.size  
-                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                        text: 'eBIKE'
+                        text_size: self.size
+                        size_hint: None, None
+                        font_size: '30sp'
+                        font_name: 'BalooBhaijaan2-Bold.ttf'
+                        color: 1,1,1,1
+                        height: '70dp'
+                        width: self.parent.width - dp(90)
+                        halign: 'left'
+                        valign: 'middle'
+                        padding_x: dp(20)
 
             #------------------------ Container Velocity, Control & battery ------------------------
 
@@ -393,7 +400,6 @@ WindowManager:
                     md_bg_color: (22/255, 47/255, 60/255, 1)
                     text_color: 1,1,1,1
                     bold: True
-                    font_name: 'Roboto-Bold.ttf'
                     font_size: 35
 
                 # Se define un indicador de la Manipulación
@@ -405,7 +411,6 @@ WindowManager:
                     md_bg_color: (22/255, 47/255, 60/255, 1)
                     text_color: 1,1,1,1
                     bold: True
-                    font_name: 'Roboto-Bold.ttf'
                     font_size: 35
                 
                 #-------------------- Label & progress Battery -------------------- 
@@ -434,57 +439,19 @@ WindowManager:
                     tick: 1
                     
         #------------------------------------------------- Window 2 (Settings) -------------------------------------------------
-        MDBottomNavigationItem:
+        ShadowedNavItem:
+            id: 'jjj'
             name: 'screen 2'
             text: 'Settings'
             icon: 'configuraciones.png'
             on_tab_release: app.screen_flag_2(*args)
 
-            #------------------------ Top Bar Settings ------------------------
-
-            # Se ajusta la Top Bar (Settings) para posicionarla en la parte superior
-            AnchorLayout:
-                anchor_x: 'center'
-                anchor_y: 'top'
-                padding: '10dp'
-
-                # Contenedor Top Bar Settings
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: None, None
-                    height: '60dp'
-                    width: dp(1420)
-
-                    # Se dibuja la Top Bar Settings
-                    canvas.before:
-                        Color:
-                            rgba: (22/255, 47/255, 60/255, 1)
-                        RoundedRectangle:
-                            pos: self.pos
-                            size: self.size
-                            radius: [10]  # Esquinas redondeadas
-
-                    # Etiqueta Top Bar Settings
-                    Label:
-                        text: 'Settings'
-                        size_hint: 1, None  
-                        width: self.parent.width  
-                        font_size: '25sp'
-                        font_name: 'Roboto-Bold.ttf'
-                        color: 1, 1, 1, 1  
-                        height: '30dp'  
-                        halign: 'center'  
-                        valign: 'middle'  
-                        text_size: self.size  
-                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-
             #------------------------ Motion Detect ------------------------
 
             # Contenedor Motion Detect
             MDBoxLayout:
-                size: root.width, dp(300)  
+                size: root.width, root.height
                 orientation: 'vertical'
-                pos_hint: {'center_y':0.4}
                 padding: '10dp'
 
                 # Sección Motion Detect
@@ -495,6 +462,7 @@ WindowManager:
                     radius: [7]
                     padding: '10dp'
                     line_color: (0.208, 0.208, 0.192, 1)
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.7}
 
                     MDLabel:
                         text: '     Motion Detect'
@@ -505,10 +473,10 @@ WindowManager:
                     MDSwitch:
                         id: adapt_switch
                         thumb_color: 0, 0, 0, 1
-                        thumb_color_down: 0.4, 0.898, 0.223, 1
-                        track_color_normal: 0.4, 0.898, 0.223, 1
-                        track_color_active: 0.4, 0.898, 0.223, 1
-                        pos_hint: {'center_y':0.3}
+                        thumb_color_down: (31/255, 218/255, 27/255, 1)
+                        track_color_normal: (31/255, 218/255, 27/255, 1)
+                        track_color_active: (31/255, 218/255, 27/255, 1)
+                        pos_hint: {'center_y':0.5}
                         on_active:
                             app.switch_state_motion_detect(*args)
                 
@@ -520,22 +488,20 @@ WindowManager:
                     font_size: '20sp'
                     size_hint_y: None
                     height: self.texture_size[1]
-                    pos_hint: {'center_x': 0.5,'center_y':0.45}
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.6}
                     color: 1, 1, 1, 1
                     padding: '20dp'
-
-                # Contenedor para los botones Automatic y Manual
+                
                 MDFloatLayout:
                     size: root.width, root.height*0.1
-
                     # Button Manual
                     CustomButton:
                         id: manual_button
                         text: '  Manual  '
-                        font_size: 38
+                        font_size: 40
                         bold: True
                         font_name: 'Roboto-Bold.ttf'
-                        pos_hint: {'center_x': 0.3, 'center_y': 0.4}
+                        pos_hint: {'center_x': 0.3, 'center_y': 0.9}
                         markup: True
                         md_bg_color: (153/255, 153/255, 143/255, 1)
                         text_color: (18/255, 18/255, 18/255, 1)
@@ -545,43 +511,40 @@ WindowManager:
                     CustomButton:
                         id: automatic_button
                         text: 'Automatic'
-                        font_size: 38
+                        font_size: 40
                         bold: True
                         font_name: 'Roboto-Bold.ttf'
-                        pos_hint: {'center_x': 0.7, 'center_y': 0.4}
+                        pos_hint: {'center_x': 0.7, 'center_y': 0.9}
                         markup: True
                         md_bg_color: (11/255, 167/255, 221/255, 1)   
                         text_color: (18/255, 18/255, 18/255, 1)
                         on_release: app.slider_unit_km(*args)
-                
+                    
                 #------------------------ Label & status current mode------------------------
-                
-                # Etiqueta Mode
-                Label:
-                    text: 'Mode'
-                    font_size: '20sp'
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                    pos_hint: {'center_x': 0.5,'center_y':0.35}
-                    color: 1, 1, 1, 1
-
-                # Contenedor para el estatus del modo seleccionado
                 MDFloatLayout:
                     size: root.width, root.height*0.1
-                
+
+                    # Etiqueta Mode
+                    Label:
+                        text: 'Mode'
+                        font_size: '20sp'
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        pos_hint: {'center_x': 0.5,'center_y':1}
+                        color: 1, 1, 1, 1
+
                     MDRectangleFlatButton:
                         id: mode
                         text: '   Manual   '
-                        pos_hint: {'center_x': 0.5, 'center_y': 0.3}
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.7}
                         markup: True
                         md_bg_color: (153/255, 153/255, 143/255, 1)
                         text_color: (18/255, 18/255, 18/255, 1)
                         bold: True
                         font_name: 'Roboto-Bold.ttf'
                         font_size: 35
-                
+                        
                 #------------------------ Label & indicator slider------------------------
-
                 MDFloatLayout:
                     size: root.width, root.height*0.1
 
@@ -592,12 +555,12 @@ WindowManager:
                         font_size: '20sp'
                         size_hint_y: None
                         height: self.texture_size[1]
-                        pos_hint: {'center_x': 0.5,'center_y':0.7}
+                        pos_hint: {'center_x': 0.5,'center_y':1}
                         color: 1, 1, 1, 1
 
                     MDSlider:
                         id: adapt_slider
-                        pos_hint: {'center_y':0.5}
+                        pos_hint: {'center_y':0.7}
                         min: 0
                         max: 100
                         step: 5
@@ -608,25 +571,22 @@ WindowManager:
                         on_value:
                             app.slider_on_value(*args)
                         on_touch_up: if self.collide_point(*args[1].pos): app.slider_touch_up(*args)
-                
+                        
                 #------------------------ Indicator Angle ------------------------
 
-                MDFloatLayout:
-                
-                    # Se define un indicador del Angulo
-                    MDRectangleFlatButton:
-                        id: angle_button
-                        text: 'Angle : 0°'
-                        text_color: 1,1,1,1
-                        bold: True
-                        font_name: 'Roboto-Bold.ttf'
-                        font_size: 35
-                        pos_hint: {'center_x': 0.5, 'center_y': 0.7}
-                        markup: True
-                        md_bg_color: (22/255, 47/255, 60/255, 1)
+                # Se define un indicador del Angulo
+                MDRectangleFlatButton:
+                    id: angle_button
+                    text: 'Angle : 0°'
+                    text_color: 1,1,1,1
+                    bold: True
+                    font_size: 35
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+                    markup: True
+                    md_bg_color: (22/255, 47/255, 60/255, 1)
 
         #------------------------------------------------- Window 3 (Disconnect) -------------------------------------------------
-        MDBottomNavigationItem:
+        ShadowedNavItem:
             name: 'screen 3'
             text: 'Disconnect'
             icon: 'desenchufado.png'

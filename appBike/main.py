@@ -17,7 +17,8 @@ from kivy.factory import Factory
 from kivymd.uix.button import MDFillRoundFlatButton
 from kivy.properties import ColorProperty, NumericProperty
 from kivy.properties import StringProperty, ListProperty
-
+from kivymd.uix.bottomnavigation import MDBottomNavigationItem
+from kivy.graphics import Color, RoundedRectangle
 
 # Importar script BLE, gpshelper y acchelper
 from BLE import Connection, communication_manager
@@ -38,6 +39,10 @@ class SpinnerDropdown(DropDown): pass
 class CustomButton(MDFillRoundFlatButton):
     border_color = ColorProperty((0, 0, 0, 1))  
     border_width = NumericProperty(1)  
+
+class ShadowedNavItem(MDBottomNavigationItem):
+    border_color = ColorProperty((0, 0, 0, 1))  
+    pass
 
 
 class App(MDApp):
@@ -189,6 +194,8 @@ class App(MDApp):
             # Modo manual activo
             self.root.get_screen('secondary_window').ids.mode.text = '   Manual   '
             self.root.get_screen('secondary_window').ids.mode.md_bg_color = (153/255, 153/255, 143/255, 1)
+
+            
             
     def slider_on_value(self, _, value: int) -> None:
         """Metodo que actualiza en la interfaz el valor que el usuario selecciona en el slider de control de asistencia y
@@ -414,8 +421,8 @@ async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asynci
 
     try:
         app.root.current = 'secondary_window'
-        app.root.get_screen('secondary_window').ids.manual_button.border_color = (0.4, 0.898, 0.223, 1) 
-        app.root.get_screen('secondary_window').ids.manual_button.border_width = 6 
+        app.root.get_screen('secondary_window').ids.jjj.border_color = (47/255, 138/255, 0.223, 1) 
+        app.root.get_screen('secondary_window').ids.jjj.border_width = 6 
     except Exception as e:
         print(f'EXCEPTION WHEN CHANGING WINDOW -> {e}')
 
