@@ -16,6 +16,8 @@ from CircularProgressBar import CircularProgressBar
 from kivy.factory import Factory
 from kivymd.uix.button import MDFillRoundFlatButton
 from kivy.properties import ColorProperty, NumericProperty
+from kivy.properties import StringProperty, ListProperty
+
 
 # Importar script BLE, gpshelper y acchelper
 from BLE import Connection, communication_manager
@@ -34,8 +36,8 @@ class SpinnerDropdown(DropDown): pass
 
 
 class CustomButton(MDFillRoundFlatButton):
-    border_color = ColorProperty((0, 0, 0, 1))  # Negro por defecto
-    border_width = NumericProperty(1)  # Grosor del borde por defecto
+    border_color = ColorProperty((0, 0, 0, 1))  
+    border_width = NumericProperty(1)  
 
 
 class App(MDApp):
@@ -84,7 +86,7 @@ class App(MDApp):
 
         self.circle_bar.text = f'0%'
         self.read_slider_text.text = f'0 %'
-        self.manip_button.text = f'M: 0'
+        self.manip_button.text = f'Manipulation: 0'
 
         self.per_button_pressed = True
         self.km_button_pressed = False
@@ -152,25 +154,22 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.dataTx_queue.put_nowait(json.dumps({'adaptationMode': 0}))
 
-
     def slider_unit_km(self, touch: bool) -> None:
         """Metodo que configura el slider para controlar asistencia con valores en km/h"""
         if touch:
             self.km_button_pressed = True
             self.per_button_pressed = False
             self.read_slider_text.text = f'0 km/h'
-            self.root.get_screen('secondary_window').ids.adapt_slider.value = 0
+            self.root.get_screen('secondary_window').ids.adapt_slider.value = 0.01
             self.root.get_screen('secondary_window').ids.adapt_slider.max = 40
             self.root.get_screen('secondary_window').ids.adapt_slider.step = 1
-            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#A7D0D2"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#A7D0D2"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#A7D0D2"
-            # Modo manual desactivado
-            self.root.get_screen('secondary_window').ids.manual_button.border_color = (0, 0, 0, 0)  
-            self.root.get_screen('secondary_window').ids.manual_button.border_width = 6  
+            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#0BA7DD"
             # Modo automatic activo
-            self.root.get_screen('secondary_window').ids.automatic_button.border_color = (0.4, 0.898, 0.223, 1)  
-            self.root.get_screen('secondary_window').ids.automatic_button.border_width = 6  
+            self.root.get_screen('secondary_window').ids.mode.text = '  Automatic  '
+            self.root.get_screen('secondary_window').ids.mode.md_bg_color = (11/255, 167/255, 221/255, 1) 
 
     def slider_unit_per(self, touch: bool) -> None:
         """Metodo que configura el slider para controlar asistencia con valores en porcentajes"""
@@ -178,20 +177,19 @@ class App(MDApp):
             self.km_button_pressed = False
             self.per_button_pressed = True
             self.read_slider_text.text = f'0 %'
-            self.root.get_screen('secondary_window').ids.adapt_slider.value = 0
+            self.sp_button.text = f'Set Point: 0'
+            self.manip_button.text = f'Manipulation: 0'
+            self.root.get_screen('secondary_window').ids.adapt_slider.value = 0.01
             self.root.get_screen('secondary_window').ids.adapt_slider.max = 100
             self.root.get_screen('secondary_window').ids.adapt_slider.step = 5
             self.root.get_screen('secondary_window').ids.adapt_slider.color = "#99998F"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#99998F"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#99998F"
-            # Modo automatic activo
-            self.root.get_screen('secondary_window').ids.automatic_button.border_color = (0, 0, 0, 0)  
-            self.root.get_screen('secondary_window').ids.automatic_button.border_width = 6 
-            # Modo manual desactivado
-            self.root.get_screen('secondary_window').ids.manual_button.border_color = (47/255, 138/255, 0.223, 1) 
-            self.root.get_screen('secondary_window').ids.manual_button.border_width = 6  
-
-
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#99998F"
+            # Modo manual activo
+            self.root.get_screen('secondary_window').ids.mode.text = '   Manual   '
+            self.root.get_screen('secondary_window').ids.mode.md_bg_color = (153/255, 153/255, 143/255, 1)
+            
     def slider_on_value(self, _, value: int) -> None:
         """Metodo que actualiza en la interfaz el valor que el usuario selecciona en el slider de control de asistencia y
            en el modo automatico tambien actualiza el valor de Set Point e igualmente manda el valor de asistencia a la ESP32"""
@@ -199,13 +197,21 @@ class App(MDApp):
         label = 'slider'
 
         if self.per_button_pressed:
-            self.read_slider_text.text = f'{value} %'
+            if value == 0.01:
+                self.read_slider_text.text = f'{0} %'
+                value = 0
+            else:
+                self.read_slider_text.text = f'{value} %'
             value = int(180 * value / 100)
-            label = 'slider_per'
+            label = 'slider_per'            
 
         elif self.km_button_pressed:
-            self.read_slider_text.text = f'{value} km/h'
-            self.sp_button.text = f'SP: {value}'
+            if value == 0.01:
+                self.read_slider_text.text = f'{0} km/h'
+                value = 0
+            else:
+                self.read_slider_text.text = f'{value} km/h'
+            self.sp_button.text = f'Set Point: {value}'
             value = value
             label = 'slider_km'
 
@@ -239,7 +245,7 @@ class App(MDApp):
             try:
                 manip = await self.manipulation_queue.get()
                 manip = int(manip)
-                self.manip_button.text = f'M: {manip}'  
+                self.manip_button.text = f'Manipulation: {manip}'  
             except Exception as e:
                 print(f'EXCEPTION IN MANIP: {e}')
                 await asyncio.sleep(1.0)
@@ -343,7 +349,7 @@ class App(MDApp):
 
         self.circle_bar.text = f'0%'
         self.read_slider_text.text = f'0 %'
-        self.manip_button.text = f'M: x'
+        self.manip_button.text = f'Manipulation: 0'
 
         self.per_button_pressed = True
         self.km_button_pressed = False
@@ -355,11 +361,10 @@ class App(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
-        self.sp_button.text = f'SP: 0'
+        self.sp_button.text = f'Set Point: 0'
         self.read_slider_text.text = f'0 km/h'
         self.root.get_screen('main_window').ids.spinner.active = False
-        self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen(
-            'secondary_window').ids.adapt_slider.min
+        self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min
         self.root.get_screen('secondary_window').ids.adapt_switch.active = False
 
     # Popup Exit
