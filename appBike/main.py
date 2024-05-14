@@ -103,7 +103,7 @@ class App(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
-        self.root.current = 'secondary_window'
+        #self.root.current = 'secondary_window'
 
     def get_permissions(self):
         """Solicita permisos de acceso a ubicación y bluetooth"""
@@ -155,9 +155,19 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.dataTx_queue.put_nowait(json.dumps({'adaptationMode': 1}))
             self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min
+            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_down= "#0BA7DD"
         else:
             self.root.get_screen('secondary_window').ids.adapt_slider.disabled = False
             self.dataTx_queue.put_nowait(json.dumps({'adaptationMode': 0}))
+            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_down= "#0BA7DD"
 
     def slider_unit_km(self, touch: bool) -> None:
         """Metodo que configura el slider para controlar asistencia con valores en km/h"""
@@ -172,10 +182,10 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#0BA7DD"
             self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#0BA7DD"
             self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_down= "#0BA7DD"
             # Modo automatic activo
-            self.root.get_screen('secondary_window').ids.mode.text = '  Automatic  '
-            self.root.get_screen('secondary_window').ids.mode.md_bg_color = (11/255, 167/255, 221/255, 1) 
-
+            self.root.get_screen('secondary_window').ids.automatic_button.md_bg_color = (11/255, 167/255, 221/255, 1) 
+            self.root.get_screen('secondary_window').ids.manual_button.md_bg_color = (153/255, 153/255, 143/255, 1) 
     def slider_unit_per(self, touch: bool) -> None:
         """Metodo que configura el slider para controlar asistencia con valores en porcentajes"""
         if touch:
@@ -187,13 +197,14 @@ class App(MDApp):
             self.root.get_screen('secondary_window').ids.adapt_slider.value = 0.01
             self.root.get_screen('secondary_window').ids.adapt_slider.max = 100
             self.root.get_screen('secondary_window').ids.adapt_slider.step = 5
-            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#99998F"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#99998F"
-            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#99998F"
-            self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#99998F"
+            self.root.get_screen('secondary_window').ids.adapt_slider.color = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_inactive = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_active = "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.hint_bg_color= "#0BA7DD"
+            self.root.get_screen('secondary_window').ids.adapt_slider.thumb_color_down= "#0BA7DD"
             # Modo manual activo
-            self.root.get_screen('secondary_window').ids.mode.text = '   Manual   '
-            self.root.get_screen('secondary_window').ids.mode.md_bg_color = (153/255, 153/255, 143/255, 1)
+            self.root.get_screen('secondary_window').ids.automatic_button.md_bg_color = (153/255, 153/255, 143/255, 1)
+            self.root.get_screen('secondary_window').ids.manual_button.md_bg_color =  (11/255, 167/255, 221/255, 1) 
 
             
             
@@ -422,8 +433,7 @@ async def run_BLE(app: MDApp, dataTx_queue: asyncio.Queue, battery_queue: asynci
 
     try:
         app.root.current = 'secondary_window'
-        app.root.get_screen('secondary_window').ids.jjj.border_color = (47/255, 138/255, 0.223, 1) 
-        app.root.get_screen('secondary_window').ids.jjj.border_width = 6 
+        
     except Exception as e:
         print(f'EXCEPTION WHEN CHANGING WINDOW -> {e}')
 

@@ -440,7 +440,6 @@ WindowManager:
                     
         #------------------------------------------------- Window 2 (Settings) -------------------------------------------------
         ShadowedNavItem:
-            id: 'jjj'
             name: 'screen 2'
             text: 'Settings'
             icon: 'configuraciones.png'
@@ -503,7 +502,7 @@ WindowManager:
                         font_name: 'Roboto-Bold.ttf'
                         pos_hint: {'center_x': 0.3, 'center_y': 0.9}
                         markup: True
-                        md_bg_color: (153/255, 153/255, 143/255, 1)
+                        md_bg_color: (11/255, 167/255, 221/255, 1)
                         text_color: (18/255, 18/255, 18/255, 1)
                         on_release: app.slider_unit_per(*args)
 
@@ -516,33 +515,12 @@ WindowManager:
                         font_name: 'Roboto-Bold.ttf'
                         pos_hint: {'center_x': 0.7, 'center_y': 0.9}
                         markup: True
-                        md_bg_color: (11/255, 167/255, 221/255, 1)   
+                        md_bg_color: (153/255, 153/255, 143/255, 1)  
                         text_color: (18/255, 18/255, 18/255, 1)
                         on_release: app.slider_unit_km(*args)
                     
                 #------------------------ Label & status current mode------------------------
-                MDFloatLayout:
-                    size: root.width, root.height*0.1
-
-                    # Etiqueta Mode
-                    Label:
-                        text: 'Mode'
-                        font_size: '20sp'
-                        size_hint_y: None
-                        height: self.texture_size[1]
-                        pos_hint: {'center_x': 0.5,'center_y':1}
-                        color: 1, 1, 1, 1
-
-                    MDRectangleFlatButton:
-                        id: mode
-                        text: '   Manual   '
-                        pos_hint: {'center_x': 0.5, 'center_y': 0.7}
-                        markup: True
-                        md_bg_color: (153/255, 153/255, 143/255, 1)
-                        text_color: (18/255, 18/255, 18/255, 1)
-                        bold: True
-                        font_name: 'Roboto-Bold.ttf'
-                        font_size: 35
+                
                         
                 #------------------------ Label & indicator slider------------------------
                 MDFloatLayout:
@@ -567,7 +545,11 @@ WindowManager:
                         orientation: 'horizontal'
                         hint: True
                         hint_text_color: 'white'
-                        hint_bg_color: (153/255, 153/255, 143/255, 1)
+                        hint_bg_color: (11/255, 167/255, 221/255, 1)
+                        color: (11/255, 167/255, 221/255, 1)
+                        thumb_color_inactive: (11/255, 167/255, 221/255, 1)
+                        thumb_color_active: (11/255, 167/255, 221/255, 1)
+                        thumb_color_down: (11/255, 167/255, 221/255, 1)
                         on_value:
                             app.slider_on_value(*args)
                         on_touch_up: if self.collide_point(*args[1].pos): app.slider_touch_up(*args)
