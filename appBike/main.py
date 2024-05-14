@@ -91,7 +91,7 @@ class App(MDApp):
 
         self.circle_bar.text = f'0%'
         self.read_slider_text.text = f'0 %'
-        self.manip_button.text = f'Manipulation: 0'
+        self.manip_button.text = f'Assistance: 0 %'
 
         self.per_button_pressed = True
         self.km_button_pressed = False
@@ -103,7 +103,7 @@ class App(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
-        #self.root.current = 'secondary_window'
+        self.root.current = 'secondary_window'
 
     def get_permissions(self):
         """Solicita permisos de acceso a ubicación y bluetooth"""
@@ -182,8 +182,8 @@ class App(MDApp):
             self.km_button_pressed = False
             self.per_button_pressed = True
             self.read_slider_text.text = f'0 %'
-            self.sp_button.text = f'Set Point: 0'
-            self.manip_button.text = f'Manipulation: 0'
+            self.sp_button.text = f'Cruising Speed: 0'
+            self.manip_button.text = f'Assistance: 0 %'
             self.root.get_screen('secondary_window').ids.adapt_slider.value = 0.01
             self.root.get_screen('secondary_window').ids.adapt_slider.max = 100
             self.root.get_screen('secondary_window').ids.adapt_slider.step = 5
@@ -218,7 +218,7 @@ class App(MDApp):
                 value = 0
             else:
                 self.read_slider_text.text = f'{value} km/h'
-            self.sp_button.text = f'Set Point: {value}'
+            self.sp_button.text = f'Cruising Speed: {value}'
             value = value
             label = 'slider_km'
 
@@ -252,7 +252,8 @@ class App(MDApp):
             try:
                 manip = await self.manipulation_queue.get()
                 manip = int(manip)
-                self.manip_button.text = f'Manipulation: {manip}'  
+                manip = (manip / 180) * 100
+                self.manip_button.text = f'Assistance: {manip} %'  
             except Exception as e:
                 print(f'EXCEPTION IN MANIP: {e}')
                 await asyncio.sleep(1.0)
@@ -356,7 +357,7 @@ class App(MDApp):
 
         self.circle_bar.text = f'0%'
         self.read_slider_text.text = f'0 %'
-        self.manip_button.text = f'Manipulation: 0'
+        self.manip_button.text = f'Assistance: 0 %'
 
         self.per_button_pressed = True
         self.km_button_pressed = False
@@ -368,7 +369,7 @@ class App(MDApp):
         self.slider_flag = False
         self.test_counter = 0
 
-        self.sp_button.text = f'Set Point: 0'
+        self.sp_button.text = f'Cruising Speed: 0'
         self.read_slider_text.text = f'0 km/h'
         self.root.get_screen('main_window').ids.spinner.active = False
         self.root.get_screen('secondary_window').ids.adapt_slider.value = self.root.get_screen('secondary_window').ids.adapt_slider.min

@@ -384,7 +384,7 @@ WindowManager:
 
                 # Etiqueta Control
                 Label:
-                    text: 'Control'
+                    text: 'Automatic Control'
                     font_size: '20sp'
                     size_hint_y: None
                     height: self.texture_size[1]
@@ -394,7 +394,7 @@ WindowManager:
                 # Se define un indicador del Set Point deseado
                 MDRectangleFlatButton:
                     id: sp_button
-                    text: 'Set Point: 0'
+                    text: 'Cruising Speed: 0'
                     pos_hint: {'center_x': 0.3, 'center_y': 0.5}
                     markup: True
                     md_bg_color: (22/255, 47/255, 60/255, 1)
@@ -405,7 +405,7 @@ WindowManager:
                 # Se define un indicador de la Manipulación
                 MDRectangleFlatButton:
                     id: manip_button
-                    text: 'Manipulation: 0'
+                    text: 'Assistance: 0 %'
                     pos_hint: {'center_x': 0.7, 'center_y': 0.5}
                     markup: True
                     md_bg_color: (22/255, 47/255, 60/255, 1)
@@ -458,10 +458,10 @@ WindowManager:
                 MDCard:
                     size_hint_y: None
                     height: dp(80)  # Altura del card
-                    md_bg_color: (0.208, 0.208, 0.192, 1)
+                    md_bg_color: (22/255, 47/255, 60/255, 1)
                     radius: [7]
                     padding: '10dp'
-                    line_color: (0.208, 0.208, 0.192, 1)
+                    line_color: (22/255, 47/255, 60/255, 1)
                     pos_hint: {'center_x': 0.5, 'center_y': 0.7}
 
                     MDLabel:
@@ -560,7 +560,7 @@ WindowManager:
 
                     MDSlider:
                         id: adapt_slider
-                        pos_hint: {'center_y':0.7}
+                        pos_hint: {'center_x': 0.5,'center_y':0.7}
                         min: 0
                         max: 100
                         step: 5
@@ -580,8 +580,8 @@ WindowManager:
                     text: 'Angle : 0°'
                     text_color: 1,1,1,1
                     bold: True
-                    font_size: 35
-                    pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+                    font_size: 40
+                    pos_hint: {'center_x': 0.5, 'center_y': 1}
                     markup: True
                     md_bg_color: (22/255, 47/255, 60/255, 1)
 
